@@ -314,8 +314,10 @@
         document.querySelectorAll('.app-page').forEach(page => page.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         
-        document.getElementById(`page${pageNum}`).classList.add('active');
-        document.getElementById(`btn-tab${pageNum}`).classList.add('active');
+        const targetPage = document.getElementById(`page${pageNum}`);
+        const targetBtn = document.getElementById(`btn-tab${pageNum}`);
+        if(targetPage) targetPage.classList.add('active');
+        if(targetBtn) targetBtn.classList.add('active');
         updateApp();
     }
 
@@ -328,8 +330,17 @@
     let myShopChart, myImpChart, myWeeklyChart, myDailyChart;
     let global_savedMoney = 0; let global_waste = 0;
 
+    // 安全にDOMの値を読み書きするためのヘルパー
+    function getSafeValue(id, fallback = '') {
+        const el = document.getElementById(id);
+        return el ? el.value : fallback;
+    }
+
     window.onload = function() {
-        if(localStorage.getItem('gemini_api_key')) document.getElementById('apiKeyInput').value = localStorage.getItem('gemini_api_key');
+        if(localStorage.getItem('gemini_api_key')) {
+            const apiEl = document.getElementById('apiKeyInput');
+            if(apiEl) apiEl.value = localStorage.getItem('gemini_api_key');
+        }
         
         const catSelect = document.getElementById('category'); if(catSelect) categories.forEach(c => catSelect.add(new Option(c, c)));
         const impSelect = document.getElementById('importance'); if(impSelect) importanceLevels.forEach(i => impSelect.add(new Option(i, i)));
@@ -342,15 +353,21 @@
         fb.auth().onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
-                document.getElementById('authStatusText').innerText = "🟢 クラウド同期中：オンラインの強固なデータベースに保護されています";
-                document.getElementById('playerName').innerText = user.displayName.toUpperCase();
-                document.getElementById('userZone').innerHTML = `<div class="user-info"><img class="user-pic" src="${user.photoURL}"> <button class="btn-action btn-pink" style="padding:5px 10px; font-size:0.8em;" onclick="logout()">ログアウト</button></div>`;
+                const authText = document.getElementById('authStatusText');
+                const pName = document.getElementById('playerName');
+                const uZone = document.getElementById('userZone');
+                if(authText) authText.innerText = "🟢 クラウド同期中：オンラインの強固なデータベースに保護されています";
+                if(pName) pName.innerText = user.displayName.toUpperCase();
+                if(uZone) uZone.innerHTML = `<div class="user-info"><img class="user-pic" src="${user.photoURL}"> <button class="btn-action btn-pink" style="padding:5px 10px; font-size:0.8em;" onclick="logout()">ログアウト</button></div>`;
                 loadCloudData();
             } else {
                 currentUser = null;
-                document.getElementById('authStatusText').innerText = "🔒 ゲストモード：ログインするとクラウド保存が解放されます";
-                document.getElementById('playerName').innerText = "GUEST";
-                document.getElementById('userZone').innerHTML = `<button class="btn-google" onclick="loginWithGoogle()"><img src='https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png' style='width:16px;'> Googleログイン</button>`;
+                const authText = document.getElementById('authStatusText');
+                const pName = document.getElementById('playerName');
+                const uZone = document.getElementById('userZone');
+                if(authText) authText.innerText = "🔒 ゲストモード：ログインするとクラウド保存が解放されます";
+                if(pName) pName.innerText = "GUEST";
+                if(uZone) uZone.innerHTML = `<button class="btn-google" onclick="loginWithGoogle()"><img src='https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png' style='width:16px;'> Googleログイン</button>`;
                 dataList = [
                     { id: 1, date: "2026-06-11", shop: "イオンネオモール", product: "牛乳 卵", amountExTax: 500, amountInTax: 550, category: "食費", importance: "必要", memo: "賞味期限アラート確認用サンプル" },
                     { id: 2, date: "2026-06-13", shop: "スターバックス", product: "贅沢フラペチーノ", amountExTax: 700, amountInTax: 770, category: "カフェ", importance: "不要かも", memo: "無駄遣いタップ確認用サンプル" }
@@ -362,7 +379,7 @@
 
     function loginWithGoogle() { try { const fb = getFirebase(); const provider = new fb.auth.GoogleAuthProvider(); fb.auth().signInWithRedirect(provider); } catch(e) { alert("認証エラー"); } }
     function logout() { getFirebase().auth().signOut(); }
-    function saveApiKey() { localStorage.setItem('gemini_api_key', document.getElementById('apiKeyInput').value); }
+    function saveApiKey() { localStorage.setItem('gemini_api_key', getSafeValue('apiKeyInput')); }
 
     function loadCloudData() {
         getFirebase().firestore().collection("users").doc(currentUser.uid).collection("receipts").orderBy("date", "asc")
@@ -394,7 +411,8 @@
     }
 
     function buildCalendarFramework() {
-        const cal = document.getElementById('monthlyCalendar'); cal.innerHTML = '';
+        const cal = document.getElementById('monthlyCalendar'); if(!cal) return;
+        cal.innerHTML = '';
         ["日","月","火","水","木","金","土"].forEach(h => cal.insertAdjacentHTML('beforeend', `<div class="cal-day-head">${h}</div>`));
         cal.insertAdjacentHTML('beforeend', `<div class="cal-cell" style="visibility:hidden;"></div>`);
         for(let day=1; day<=30; day++) { cal.insertAdjacentHTML('beforeend', `<div class="cal-cell" id="cal-day-${day}"><span class="cal-num">${day}</span><span class="cal-amt" id="cal-amt-${day}"></span></div>`); }
@@ -405,22 +423,29 @@
         saveReceipt({ date: "2026-06-01", shop: "サイバーモバイル", product: "スマホ通信代", amountExTax: 2980, amountInTax: 3278, category: "サブスク", importance: "必要", memo: "自動枠" });
     }
 
-    function handleFileSelect(input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { base64Image = e.target.result.split(',')[1]; document.getElementById('scanStatus').innerText = "📷 スキャン準備完了"; }; reader.readAsDataURL(file); } }
+    function handleFileSelect(input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { base64Image = e.target.result.split(',')[1]; const ss = document.getElementById('scanStatus'); if(ss) ss.innerText = "📷 スキャン準備完了"; }; reader.readAsDataURL(file); } }
     async function startAIScan() {
-        const apiKey = document.getElementById('apiKeyInput').value; if(!apiKey || !base64Image) { alert("キーと画像を選んでね！"); return; }
-        document.getElementById('scanStatus').innerText = "⏳ AI解析中...";
+        const apiKey = getSafeValue('apiKeyInput'); if(!apiKey || !base64Image) { alert("キーと画像を選んでね！"); return; }
+        const ss = document.getElementById('scanStatus'); if(ss) ss.innerText = "⏳ AI解析中...";
         const promptText = `JSON形式だけでレシートデータを解析して。`;
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         try {
             const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: promptText }, { inlineData: { mimeType: "image/jpeg", data: base64Image } }] }] }) });
             const result = await response.json(); const cleanJson = result.candidates[0].content.parts[0].text.replace(/```json/g, "").replace(/```/g, "").trim(); const receiptData = JSON.parse(cleanJson);
-            document.getElementById('date').value = receiptData.date; document.getElementById('shop').value = receiptData.shop; document.getElementById('product').value = receiptData.product; document.getElementById('amountInTax').value = receiptData.amountInTax; document.getElementById('category').value = receiptData.category; document.getElementById('importance').value = receiptData.importance;
-            document.getElementById('scanStatus').innerText = "✅ 解析完了！";
-        } catch(e) { document.getElementById('scanStatus').innerText = "❌ 解析エラー"; }
+            
+            const elDate = document.getElementById('date'); if(elDate) elDate.value = receiptData.date;
+            const elShop = document.getElementById('shop'); if(elShop) elShop.value = receiptData.shop;
+            const elProd = document.getElementById('product'); if(elProd) elProd.value = receiptData.product;
+            const elInTax = document.getElementById('amountInTax'); if(elInTax) elInTax.value = receiptData.amountInTax;
+            const elCat = document.getElementById('category'); if(elCat) elCat.value = receiptData.category;
+            const elImp = document.getElementById('importance'); if(elImp) elImp.value = receiptData.importance;
+            
+            if(ss) ss.innerText = "✅ 解析完了！";
+        } catch(e) { if(ss) ss.innerText = "❌ 解析エラー"; }
     }
 
-    function calcTax() { const ex = document.getElementById('amountExTax').value; if(ex) document.getElementById('amountInTax').value = Math.round(ex*1.1); }
-    function calcChange() { const In = document.getElementById('amountInTax').value; const dep = document.getElementById('deposit').value; if(In && dep) document.getElementById('change').value = dep - In >= 0 ? dep - In : 0; }
+    function calcTax() { const ex = getSafeValue('amountExTax'); if(ex) { const el = document.getElementById('amountInTax'); if(el) el.value = Math.round(ex*1.1); } }
+    function calcChange() { const In = getSafeValue('amountInTax'); const dep = getSafeValue('deposit'); if(In && dep) { const el = document.getElementById('change'); if(el) el.value = dep - In >= 0 ? dep - In : 0; } }
     
     function togglePanel(id) { 
         document.querySelectorAll('.detail-panel').forEach(p => { if(p.id !== id) p.classList.remove('active'); }); 
@@ -457,19 +482,19 @@
 
     function saveEditField(id) {
         const updated = {
-            date: document.getElementById(`edit-date-${id}`).value,
-            shop: document.getElementById(`edit-shop-${id}`).value,
-            product: document.getElementById(`edit-product-${id}`).value,
-            amountInTax: parseInt(document.getElementById(`edit-amt-${id}`).value) || 0,
-            category: document.getElementById(`edit-cat-${id}`).value,
-            importance: document.getElementById(`edit-imp-${id}`).value,
-            memo: document.getElementById(`edit-memo-${id}`).value
+            date: getSafeValue(`edit-date-${id}`),
+            shop: getSafeValue(`edit-shop-${id}`),
+            product: getSafeValue(`edit-product-${id}`),
+            amountInTax: parseInt(getSafeValue(`edit-amt-${id}`)) || 0,
+            category: getSafeValue(`edit-cat-${id}`),
+            importance: getSafeValue(`edit-imp-${id}`),
+            memo: getSafeValue(`edit-memo-${id}`)
         };
         updateItem(id, updated);
     }
 
     function updateApp() {
-        const selectedMonth = document.getElementById('targetMonthSelect').value;
+        const selectedMonth = getSafeValue('targetMonthSelect', '2026-06');
         
         const tbody = document.querySelector('#receiptTable tbody'); 
         const totalListDiv = document.getElementById('panel-total-list');
@@ -549,7 +574,7 @@
                 }
                 if(lowerProd.includes("肉") || lowerProd.includes("パック")) {
                     let rem = 2 - daysElapsed;
-                    detectedStockItems.push({ name: "🥩 生肉パック", info: rem <= 0 ? "🚨 消費期限切れ警告！" : rem <= 2 ? `🚨 残り${rem}日：2日前！すぐに冷凍するか調理して！` : `📊 残り ${rem} 日`, priority: rem <= 2 ? 95 : rem });
+                    detectedStockItems.push({ name: "🥩 生肉パック", info: rem <= 0 ? "🚨 期限切れ警告！" : rem <= 2 ? `🚨 残り${rem}日：2日前！すぐに冷凍するか調理して！` : `📊 残り ${rem} 日`, priority: rem <= 2 ? 95 : rem });
                 }
                 if(lowerProd.includes("シャンプー")) {
                     let rem = 30 - daysElapsed;
@@ -563,7 +588,7 @@
         if(document.getElementById('totalAmount')) document.getElementById('totalAmount').innerText = `¥${total.toLocaleString()}`;
         if(document.getElementById('wasteAmount')) document.getElementById('wasteAmount').innerText = `¥${global_waste.toLocaleString()}`;
 
-        const budget = parseInt(document.getElementById('monthlyBudget').value) || 50000;
+        const budget = parseInt(getSafeValue('monthlyBudget', '50000')) || 50000;
         let hpPercent = ((budget - total) / budget) * 100; if(hpPercent < 0) hpPercent = 0;
         if(document.getElementById('hpBar')) document.getElementById('hpBar').style.width = `${hpPercent}%`;
         if(document.getElementById('hpBarLabel')) document.getElementById('hpBarLabel').innerText = `HP: ¥${(budget - total).toLocaleString()} / ¥${budget.toLocaleString()} (${hpPercent.toFixed(0)}%)`;
@@ -572,7 +597,8 @@
         if(document.getElementById('savedAmount')) document.getElementById('savedAmount').innerText = `¥${global_savedMoney.toLocaleString()}`;
         if(document.getElementById('panel-save-info')) document.getElementById('panel-save-info').innerText = `現在のセーフ資金残高は ¥${global_savedMoney.toLocaleString()} です。`;
 
-        const wishName = document.getElementById('wishName').value; const wishPrice = parseInt(document.getElementById('wishPrice').value) || 1;
+        const wishName = getSafeValue('wishName', '夢のご褒美アイテム'); 
+        const wishPrice = parseInt(getSafeValue('wishPrice', '12000')) || 1;
         let wishPercent = (global_savedMoney / wishPrice) * 100; if(wishPercent > 100) wishPercent = 100;
         if(document.getElementById('wishBar')) document.getElementById('wishBar').style.width = `${wishPercent}%`;
         if(document.getElementById('wishBarLabel')) document.getElementById('wishBarLabel').innerText = `「${wishName}」まであと ¥${(wishPrice - global_savedMoney > 0 ? wishPrice - global_savedMoney : 0).toLocaleString()} (${wishPercent.toFixed(0)}%)`;
@@ -652,33 +678,33 @@
         XLSX.writeFile(wb, "parsimonia_hybrid_data.xlsx");
     }
 
-    // スクリプト内で確実に対象を取得できるようイベントを設定
+    // DOMContentLoadedを使い、HTML構造が読み終わってから全てのイベントや安全ガードを施す
     document.addEventListener("DOMContentLoaded", function() {
         const form = document.getElementById('receiptForm');
         if(form) {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 const newItem = {
-                    date: document.getElementById('date').value, 
-                    shop: document.getElementById('shop').value, 
-                    product: document.getElementById('product').value,
-                    amountExTax: parseInt(document.getElementById('amountExTax').value) || 0, 
-                    amountInTax: parseInt(document.getElementById('amountInTax').value),
-                    deposit: parseInt(document.getElementById('deposit').value) || 0, 
-                    change: parseInt(document.getElementById('change').value) || 0,
-                    category: document.getElementById('category').value, 
-                    importance: document.getElementById('importance').value, 
-                    memo: document.getElementById('memo').value
+                    date: getSafeValue('date'), 
+                    shop: getSafeValue('shop'), 
+                    product: getSafeValue('product'),
+                    amountExTax: parseInt(getSafeValue('amountExTax')) || 0, 
+                    amountInTax: parseInt(getSafeValue('amountInTax')) || 0,
+                    deposit: parseInt(getSafeValue('deposit')) || 0, 
+                    change: parseInt(getSafeValue('change')) || 0,
+                    category: getSafeValue('category'), 
+                    importance: getSafeValue('importance'), 
+                    memo: getSafeValue('memo')
                 };
                 saveReceipt(newItem);
                 
-                document.getElementById('shop').value = ''; 
-                document.getElementById('product').value = ''; 
-                document.getElementById('amountExTax').value = ''; 
-                document.getElementById('amountInTax').value = ''; 
-                document.getElementById('deposit').value = ''; 
-                document.getElementById('change').value = ''; 
-                document.getElementById('memo').value = '';
+                const elShop = document.getElementById('shop'); if(elShop) elShop.value = ''; 
+                const elProd = document.getElementById('product'); if(elProd) elProd.value = ''; 
+                const elExTax = document.getElementById('amountExTax'); if(elExTax) elExTax.value = ''; 
+                const elInTax = document.getElementById('amountInTax'); if(elInTax) elInTax.value = ''; 
+                const elDep = document.getElementById('deposit'); if(elDep) elDep.value = ''; 
+                const elChange = document.getElementById('change'); if(elChange) elChange.value = ''; 
+                const elMemo = document.getElementById('memo'); if(elMemo) elMemo.value = '';
             });
         }
     });
