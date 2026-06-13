@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>parsimonia 〜家計簿アプリ〜</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
+    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
+    <link href="[https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght=700&display=swap](https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght=700&display=swap)" rel="stylesheet">
+    <script src="[https://cdn.jsdelivr.net/npm/chart.js](https://cdn.jsdelivr.net/npm/chart.js)"></script>
+    <script src="[https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js](https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js)"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="[https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js](https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js)"></script>
+    <script src="[https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js](https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js)"></script>
+    <script src="[https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js](https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js)"></script>
 
     <style>
         :root {
@@ -126,7 +126,7 @@
             <div id="authStatusText" style="color:var(--neon-yellow);">🔒 クラウド未接続：ログインすると個人データが自動同期されます</div>
             <div id="userZone">
                 <button class="btn-google" onclick="loginWithGoogle()">
-                    <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png" alt="G" style="width:16px;">
+                    <img src="[https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png](https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png)" alt="G" style="width:16px;">
                     Googleアカウントでログイン
                 </button>
             </div>
@@ -424,6 +424,7 @@
     }
 
     function handleFileSelect(input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { base64Image = e.target.result.split(',')[1]; const ss = document.getElementById('scanStatus'); if(ss) ss.innerText = "📷 スキャン準備完了"; }; reader.readAsDataURL(file); } }
+    
     async function startAIScan() {
         const apiKey = getSafeValue('apiKeyInput'); if(!apiKey || !base64Image) { alert("キーと画像を選んでね！"); return; }
         const ss = document.getElementById('scanStatus'); if(ss) ss.innerText = "⏳ AI解析中...";
@@ -431,7 +432,12 @@
         const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
         try {
             const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: promptText }, { inlineData: { mimeType: "image/jpeg", data: base64Image } }] }] }) });
-            const result = await response.json(); const cleanJson = result.candidates[0].content.parts[0].text.replace(/```json/g, "").replace(/```/g, "").trim(); const receiptData = JSON.parse(cleanJson);
+            const result = await response.json(); 
+            
+            // 【安全化】SyntaxErrorの原因だった正規表現のスラッシュを取り除き、文字列置換(split&join)に変更しました
+            let rawText = result.candidates[0].content.parts[0].text;
+            let cleanJson = rawText.split("```json").join("").split("```").join("").trim();
+            const receiptData = JSON.parse(cleanJson);
             
             const elDate = document.getElementById('date'); if(elDate) elDate.value = receiptData.date;
             const elShop = document.getElementById('shop'); if(elShop) elShop.value = receiptData.shop;
