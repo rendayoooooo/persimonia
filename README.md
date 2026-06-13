@@ -53,7 +53,6 @@
         @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
         .card { background: var(--card-bg); padding: 25px; border-radius: 16px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); border: 2px solid #2d2d2d; }
         
-        /* 📊 グラフカード内のコンテナサイズを均等に半減 */
         .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 768px) { .chart-grid { grid-template-columns: 1fr; } }
         .chart-container { background: #1a1a1a; padding: 10px; border-radius: 12px; border: 1px solid #333; margin-top: 10px; position: relative; height: 220px; width: 100%; display: flex; justify-content: center; align-items: center; }
@@ -88,7 +87,6 @@
         .stat-card:hover { transform: translateY(-2px); filter: brightness(1.2); }
         .stat-num { font-size: 1.2em; font-weight: bold; color: #fff; margin-top: 3px; }
         
-        /* 📂 アコーディオンパネル */
         .detail-panel { display: none; background: #2d2d2d; border: 2px solid var(--neon-blue); border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 0.85em; max-height: 200px; overflow-y: auto; }
         .detail-panel.active { display: block; }
         .detail-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #444; padding: 5px 0; }
@@ -118,9 +116,9 @@
     <h1>⚡ parsimonia 〜家計簿アプリ〜 ⚡</h1>
 
     <div class="tab-navigation">
-        <button class="tab-btn active" onclick="switchPage(1)">📊 メインステータス面</button>
-        <button class="tab-btn" onclick="switchPage(2)">📸 スキャン＆登録面</button>
-        <button class="tab-btn" onclick="switchPage(3)">🔑 ログ＆システム面</button>
+        <button id="btn-tab1" class="tab-btn active" onclick="switchPage(1)">📊 メインステータス面</button>
+        <button id="btn-tab2" class="tab-btn" onclick="switchPage(2)">📸 スキャン＆登録面</button>
+        <button id="btn-tab3" class="tab-btn" onclick="switchPage(3)">🔑 ログ＆システム面</button>
     </div>
 
     <div id="page1" class="app-page active">
@@ -142,7 +140,7 @@
             <div class="status-item">入力ストリーク: <span class="status-val" id="streakDays">1日連続中！🔥</span></div>
         </div>
 
-        <div class="ai-room" id="aiRoom" style="margin-bottom:25px;">
+        <div class="ai-room">
             <div class="ai-avatar" id="aiAvatar">😺</div>
             <div style="font-size:0.85em; color:#aaa; margin-top:5px;">クラウドデータベース防御シールド稼働状況</div>
             
@@ -255,7 +253,7 @@
                         <div><label>カテゴリ</label><select id="category"></select></div>
                         <div><label>必要度</label><select id="importance"></select></div>
                     </div>
-                    <div class="form-group"><label>ひと言メモ</label><input type="text" id="memo"></div>
+                    <div class="form-group"><label>ひひとことメモ</label><input type="text" id="memo"></div>
                     <button type="submit" class="btn-action btn-green">レシートデータをワールドに登録！</button>
                 </form>
             </div>
@@ -315,8 +313,9 @@
     function switchPage(pageNum) {
         document.querySelectorAll('.app-page').forEach(page => page.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        
         document.getElementById(`page${pageNum}`).classList.add('active');
-        event.target.classList.add('active');
+        document.getElementById(`btn-tab${pageNum}`).classList.add('active');
         updateApp();
     }
 
@@ -327,11 +326,14 @@
     let playerLV = 1; let playerEXP = 0; let base64Image = "";
     let dataList = []; let currentUser = null;
     let myShopChart, myImpChart, myWeeklyChart, myDailyChart;
-
     let global_savedMoney = 0; let global_waste = 0;
 
     window.onload = function() {
         if(localStorage.getItem('gemini_api_key')) document.getElementById('apiKeyInput').value = localStorage.getItem('gemini_api_key');
+        
+        const catSelect = document.getElementById('category'); if(catSelect) categories.forEach(c => catSelect.add(new Option(c, c)));
+        const impSelect = document.getElementById('importance'); if(impSelect) importanceLevels.forEach(i => impSelect.add(new Option(i, i)));
+
         buildCalendarFramework();
         
         const fb = getFirebase();
@@ -382,7 +384,6 @@
         else { dataList = dataList.filter(item => item.id != id); updateApp(); }
     }
 
-    // 📝 データベース更新・保存用関数（編集モード用）
     function updateItem(id, updatedFields) {
         if(currentUser && typeof id === "string" && id.length > 5) {
             getFirebase().firestore().collection("users").doc(currentUser.uid).collection("receipts").doc(id).update(updatedFields);
@@ -420,12 +421,12 @@
 
     function calcTax() { const ex = document.getElementById('amountExTax').value; if(ex) document.getElementById('amountInTax').value = Math.round(ex*1.1); }
     function calcChange() { const In = document.getElementById('amountInTax').value; const dep = document.getElementById('deposit').value; if(In && dep) document.getElementById('change').value = dep - In >= 0 ? dep - In : 0; }
-    function togglePanel(id) { document.querySelectorAll('.detail-panel').forEach(p => { if(p.id !== id) p.classList.remove('active'); }); const p = document.getElementById(id); if(p) p.classList.toggle('active'); }
+    
+    function togglePanel(id) { 
+        document.querySelectorAll('.detail-panel').forEach(p => { if(p.id !== id) p.classList.remove('active'); }); 
+        const p = document.getElementById(id); if(p) p.classList.toggle('active'); 
+    }
 
-    const catSelect = document.getElementById('category'); categories.forEach(c => catSelect.add(new Option(c, c)));
-    const impSelect = document.getElementById('importance'); importanceLevels.forEach(i => impSelect.add(new Option(i, i)));
-
-    // 💾 インライン編集切り替えロジック
     function enterEditMode(id) {
         const row = document.getElementById(`row-${id}`);
         const item = dataList.find(i => i.id == id);
@@ -467,7 +468,6 @@
         updateItem(id, updated);
     }
 
-    // 🔄 アプリ全体のレンダリングコア
     function updateApp() {
         const selectedMonth = document.getElementById('targetMonthSelect').value;
         
@@ -487,14 +487,12 @@
         let weeklyCounts = { "1週目":0, "2週目":0, "3週目":0, "4週目":0 };
         let dailyCounts = {}; for(let d=1; d<=30; d++) dailyCounts[d] = 0;
 
-        let detectedStockItems = []; // 期限判定オブジェクト用配列
-        let registeredShops = new Set(); // お店サジェスト用履歴保持
+        let detectedStockItems = []; 
+        let registeredShops = new Set(); 
 
         dataList.forEach(item => {
-            // お店の履歴を記録
             if(item.shop) registeredShops.add(item.shop);
 
-            // ③ マスターデータベーステーブル構築（個別ID行を持たせる）
             if(tbody) {
                 tbody.insertAdjacentHTML('beforeend', `<tr id="row-${item.id}">
                     <td>${item.date}</td><td>${item.shop}</td><td>${item.product}</td><td><strong>¥${item.amountInTax}</strong></td>
@@ -507,16 +505,13 @@
                 </tr>`);
             }
 
-            // 📅 選択月フィルタ
             if (item.date.startsWith(selectedMonth)) {
                 total += item.amountInTax;
 
-                // 1ページ目：通常支出内訳
                 if(totalListDiv) {
                     totalListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item"><span>${item.date} [${item.shop}] - ${item.product}</span><strong>¥${item.amountInTax}</strong></div>`);
                 }
 
-                // 1ページ目：節約候補（不要かも）タップ内訳の蓄積
                 if(item.importance === "不要かも") {
                     global_waste += item.amountInTax;
                     if(wasteListDiv) {
@@ -539,9 +534,8 @@
                 const calEl = document.getElementById(`cal-amt-${dayNum}`);
                 if(calEl) calEl.innerText = `¥${dailyCounts[dayNum].toLocaleString()}`;
 
-                // ⏰ 賞味期限シミュレーションデータの生成（購入日に基づく）
                 const buyDate = new Date(item.date);
-                const currentSimulatedTime = new Date("2026-06-13"); // 家計簿システム上の現在日時
+                const currentSimulatedTime = new Date("2026-06-13"); 
                 const daysElapsed = Math.floor((currentSimulatedTime - buyDate) / (1000 * 60 * 60 * 24));
 
                 const lowerProd = item.product.toLowerCase();
@@ -564,10 +558,8 @@
             }
         });
 
-        // 🛍️ お店履歴オートコンプリート（datalist）を同期
-        registeredShops.forEach(s => { if(datalistEl) datalistEl.insertAdjacentHTML('beforeend', `<option value="${s}"></option>`); });
+        if(datalistEl) registeredShops.forEach(s => { datalistEl.insertAdjacentHTML('beforeend', `<option value="${s}"></option>`); });
 
-        // 統計パネルテキスト反映
         if(document.getElementById('totalAmount')) document.getElementById('totalAmount').innerText = `¥${total.toLocaleString()}`;
         if(document.getElementById('wasteAmount')) document.getElementById('wasteAmount').innerText = `¥${global_waste.toLocaleString()}`;
 
@@ -589,7 +581,6 @@
         if(document.getElementById('playerLevel')) document.getElementById('playerLevel').innerText = playerLV;
         if(document.getElementById('playerExp')) document.getElementById('playerExp').innerText = `${playerEXP % 100}/100`;
 
-        // 🥇 優先度に基づき賞味期限警告をハイパーソート（緊急を上へ）
         detectedStockItems.sort((a, b) => b.priority - a.priority);
         const stockListEl = document.getElementById('aiStockAnalyzerList');
         if(stockListEl) {
@@ -661,16 +652,35 @@
         XLSX.writeFile(wb, "parsimonia_hybrid_data.xlsx");
     }
 
-    document.getElementById('receiptForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const newItem = {
-            date: document.getElementById('date').value, shop: document.getElementById('shop').value, product: document.getElementById('product').value,
-            amountExTax: parseInt(document.getElementById('amountExTax').value) || 0, amountInTax: parseInt(document.getElementById('amountInTax').value),
-            deposit: parseInt(document.getElementById('deposit').value) || 0, change: parseInt(document.getElementById('change').value) || 0,
-            category: document.getElementById('category').value, importance: document.getElementById('importance').value, memo: document.getElementById('memo').value
-        };
-        saveReceipt(newItem);
-        document.getElementById('shop').value = ''; document.getElementById('product').value = ''; document.getElementById('amountExTax').value = ''; document.getElementById('amountInTax').value = ''; document.getElementById('deposit').value = ''; document.getElementById('change').value = ''; document.getElementById('memo').value = '';
+    // スクリプト内で確実に対象を取得できるようイベントを設定
+    document.addEventListener("DOMContentLoaded", function() {
+        const form = document.getElementById('receiptForm');
+        if(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const newItem = {
+                    date: document.getElementById('date').value, 
+                    shop: document.getElementById('shop').value, 
+                    product: document.getElementById('product').value,
+                    amountExTax: parseInt(document.getElementById('amountExTax').value) || 0, 
+                    amountInTax: parseInt(document.getElementById('amountInTax').value),
+                    deposit: parseInt(document.getElementById('deposit').value) || 0, 
+                    change: parseInt(document.getElementById('change').value) || 0,
+                    category: document.getElementById('category').value, 
+                    importance: document.getElementById('importance').value, 
+                    memo: document.getElementById('memo').value
+                };
+                saveReceipt(newItem);
+                
+                document.getElementById('shop').value = ''; 
+                document.getElementById('product').value = ''; 
+                document.getElementById('amountExTax').value = ''; 
+                document.getElementById('amountInTax').value = ''; 
+                document.getElementById('deposit').value = ''; 
+                document.getElementById('change').value = ''; 
+                document.getElementById('memo').value = '';
+            });
+        }
     });
 </script>
 </body>
