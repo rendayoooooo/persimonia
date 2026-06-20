@@ -133,6 +133,7 @@
                 </button>
             </div>
         </div>
+        <div id="cloudToast" style="display:none; background:#1a1a2e; border:2px solid var(--neon-green); color:#fff; padding:8px 14px; border-radius:8px; margin:-10px 0 20px 0; font-size:0.85em;"></div>
 
         <div class="status-header">
             <div class="status-item">PLAYER: <span class="status-val" id="playerName" style="color:#ff7675;">GUEST</span></div>
@@ -335,7 +336,12 @@
         buildCalendarFramework();
         
         const fb = getFirebase();
-        fb.auth().getRedirectResult().then(result => { if (result && result.user) { console.log("Login Success"); } }).catch(e => console.error(e));
+        fb.auth().getRedirectResult().then(result => { if (result && result.user) { console.log("Login Success"); } }).catch(e => {
+            // 🚨 ここでauth/unauthorized-domainが出る場合、Firebaseの「承認済みドメイン」に
+            // 今動かしているドメイン(例: xxxx.github.io)が登録されていないのが原因
+            console.error("Googleログインエラー:", e);
+            alert(`Googleログインに失敗しました: ${e.code || e.message}\n\nFirebaseコンソールの「Authentication > Settings > 承認済みドメイン」に、このサイトのドメインが登録されているか確認してください。`);
+        });
 
         fb.auth().onAuthStateChanged(user => {
             if (user) {
@@ -362,6 +368,19 @@
     function logout() { getFirebase().auth().signOut(); }
     function saveApiKey() { localStorage.setItem('gemini_api_key', document.getElementById('apiKeyInput').value); }
 
+    // 🔔 クラウド保存・読み込みの成否を画面に表示するためのトースト
+    let cloudToastTimer = null;
+    function showCloudToast(msg, isError = false) {
+        const el = document.getElementById('cloudToast');
+        if(!el) return;
+        el.innerText = msg;
+        el.style.borderColor = isError ? "var(--neon-pink)" : "var(--neon-green)";
+        el.style.color = isError ? "var(--neon-pink)" : "#fff";
+        el.style.display = "block";
+        clearTimeout(cloudToastTimer);
+        cloudToastTimer = setTimeout(() => { el.style.display = "none"; }, isError ? 7000 : 2500);
+    }
+
     function loadCloudData() {
         getFirebase().firestore().collection("users").doc(currentUser.uid).collection("receipts").orderBy("date", "asc")
         .onSnapshot(snapshot => {
@@ -369,23 +388,44 @@
             snapshot.forEach(doc => { dataList.push({ id: doc.id, ...doc.data() }); });
             playerEXP = dataList.length * 15;
             updateApp();
+        }, error => {
+            // 🚨 ここが発火する＝Firestoreのセキュリティルールやプロジェクト設定が原因の可能性が高い
+            console.error("Firestore読み込みエラー:", error);
+            showCloudToast(`❌ クラウドからの読み込みに失敗: ${error.message}`, true);
         });
     }
 
     function saveReceipt(newItem) {
-        if(currentUser) { getFirebase().firestore().collection("users").doc(currentUser.uid).collection("receipts").add(newItem); } 
-        else { dataList.push({ id: Date.now(), ...newItem }); updateApp(); }
+        if(currentUser) {
+            getFirebase().firestore().collection("users").doc(currentUser.uid).collection("receipts").add(newItem)
+                .then(() => showCloudToast("✅ クラウドに保存しました"))
+                .catch(error => {
+                    console.error("Firestore保存エラー:", error);
+                    showCloudToast(`❌ クラウド保存に失敗: ${error.message}`, true);
+                });
+        } else { dataList.push({ id: Date.now(), ...newItem }); updateApp(); }
     }
 
     function deleteItem(id) {
-        if(currentUser && typeof id === "string" && id.length > 5) { getFirebase().firestore().collection("users").doc(currentUser.uid).collection("receipts").doc(id).delete(); } 
-        else { dataList = dataList.filter(item => item.id != id); updateApp(); }
+        if(currentUser && typeof id === "string" && id.length > 5) {
+            getFirebase().firestore().collection("users").doc(currentUser.uid).collection("receipts").doc(id).delete()
+                .then(() => showCloudToast("✅ クラウドから削除しました"))
+                .catch(error => {
+                    console.error("Firestore削除エラー:", error);
+                    showCloudToast(`❌ クラウド削除に失敗: ${error.message}`, true);
+                });
+        } else { dataList = dataList.filter(item => item.id != id); updateApp(); }
     }
 
     // 📝 データベース更新・保存用関数（編集モード用）
     function updateItem(id, updatedFields) {
         if(currentUser && typeof id === "string" && id.length > 5) {
-            getFirebase().firestore().collection("users").doc(currentUser.uid).collection("receipts").doc(id).update(updatedFields);
+            getFirebase().firestore().collection("users").doc(currentUser.uid).collection("receipts").doc(id).update(updatedFields)
+                .then(() => showCloudToast("✅ クラウドを更新しました"))
+                .catch(error => {
+                    console.error("Firestore更新エラー:", error);
+                    showCloudToast(`❌ クラウド更新に失敗: ${error.message}`, true);
+                });
         } else {
             dataList = dataList.map(item => item.id == id ? { ...item, ...updatedFields } : item);
             updateApp();
