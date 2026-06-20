@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>parsimonia 〜家計簿アプリ〜</title>
-    <link rel="preconnect" href="[https://fonts.googleapis.com](https://fonts.googleapis.com)">
-    <link rel="preconnect" href="[https://fonts.gstatic.com](https://fonts.gstatic.com)" crossorigin>
-    <link href="[https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght=700&display=swap](https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght=700&display=swap)" rel="stylesheet">
-    <script src="[https://cdn.jsdelivr.net/npm/chart.js](https://cdn.jsdelivr.net/npm/chart.js)"></script>
-    <script src="[https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js](https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js)"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-    <script src="[https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js](https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js)"></script>
-    <script src="[https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js](https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js)"></script>
-    <script src="[https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js](https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js)"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
         :root {
@@ -53,6 +53,7 @@
         @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
         .card { background: var(--card-bg); padding: 25px; border-radius: 16px; box-shadow: 0 8px 16px rgba(0,0,0,0.5); border: 2px solid #2d2d2d; }
         
+        /* 📊 グラフカード内のコンテナサイズを均等に半減 */
         .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         @media (max-width: 768px) { .chart-grid { grid-template-columns: 1fr; } }
         .chart-container { background: #1a1a1a; padding: 10px; border-radius: 12px; border: 1px solid #333; margin-top: 10px; position: relative; height: 220px; width: 100%; display: flex; justify-content: center; align-items: center; }
@@ -87,6 +88,7 @@
         .stat-card:hover { transform: translateY(-2px); filter: brightness(1.2); }
         .stat-num { font-size: 1.2em; font-weight: bold; color: #fff; margin-top: 3px; }
         
+        /* 📂 アコーディオンパネル */
         .detail-panel { display: none; background: #2d2d2d; border: 2px solid var(--neon-blue); border-radius: 12px; padding: 12px; margin-bottom: 15px; font-size: 0.85em; max-height: 200px; overflow-y: auto; }
         .detail-panel.active { display: block; }
         .detail-item { display: flex; justify-content: space-between; border-bottom: 1px dashed #444; padding: 5px 0; }
@@ -116,9 +118,9 @@
     <h1>⚡ parsimonia 〜家計簿アプリ〜 ⚡</h1>
 
     <div class="tab-navigation">
-        <button id="btn-tab1" class="tab-btn active" onclick="switchPage(1)">📊 メインステータス面</button>
-        <button id="btn-tab2" class="tab-btn" onclick="switchPage(2)">📸 スキャン＆登録面</button>
-        <button id="btn-tab3" class="tab-btn" onclick="switchPage(3)">🔑 ログ＆システム面</button>
+        <button class="tab-btn active" onclick="switchPage(1)">📊 メインステータス面</button>
+        <button class="tab-btn" onclick="switchPage(2)">📸 スキャン＆登録面</button>
+        <button class="tab-btn" onclick="switchPage(3)">🔑 ログ＆システム面</button>
     </div>
 
     <div id="page1" class="app-page active">
@@ -126,7 +128,7 @@
             <div id="authStatusText" style="color:var(--neon-yellow);">🔒 クラウド未接続：ログインすると個人データが自動同期されます</div>
             <div id="userZone">
                 <button class="btn-google" onclick="loginWithGoogle()">
-                    <img src="[https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png](https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png)" alt="G" style="width:16px;">
+                    <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png" alt="G" style="width:16px;">
                     Googleアカウントでログイン
                 </button>
             </div>
@@ -140,7 +142,7 @@
             <div class="status-item">入力ストリーク: <span class="status-val" id="streakDays">1日連続中！🔥</span></div>
         </div>
 
-        <div class="ai-room">
+        <div class="ai-room" id="aiRoom" style="margin-bottom:25px;">
             <div class="ai-avatar" id="aiAvatar">😺</div>
             <div style="font-size:0.85em; color:#aaa; margin-top:5px;">クラウドデータベース防御シールド稼働状況</div>
             
@@ -227,7 +229,7 @@
                         <input type="file" accept="image/*" style="display: none;" onchange="handleFileSelect(this)">
                     </label>
                     <div id="scanStatus" style="font-size:0.9em; color:var(--neon-yellow); margin-top:10px;"></div>
-                    <button type="button" class="btn-action btn-purple" style="padding:8px 16px; font-size:0.9em; margin-top:10px;" onclick="startAIScan()">✨ AIスキャン開始</button>
+                    <button type="button" id="aiScanBtn" class="btn-action btn-purple" style="padding:8px 16px; font-size:0.9em; margin-top:10px;" onclick="startAIScan()">✨ AIスキャン開始</button>
                 </div>
                 <button type="button" class="btn-action btn-purple" style="width:100%; font-size:0.9em; margin-bottom:15px;" onclick="injectFixedExpenses()">⚡ 固定費（家賃・スマホ等）を自動入力</button>
                 
@@ -253,7 +255,7 @@
                         <div><label>カテゴリ</label><select id="category"></select></div>
                         <div><label>必要度</label><select id="importance"></select></div>
                     </div>
-                    <div class="form-group"><label>ひひとことメモ</label><input type="text" id="memo"></div>
+                    <div class="form-group"><label>ひと言メモ</label><input type="text" id="memo"></div>
                     <button type="submit" class="btn-action btn-green">レシートデータをワールドに登録！</button>
                 </form>
             </div>
@@ -313,11 +315,8 @@
     function switchPage(pageNum) {
         document.querySelectorAll('.app-page').forEach(page => page.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        
-        const targetPage = document.getElementById(`page${pageNum}`);
-        const targetBtn = document.getElementById(`btn-tab${pageNum}`);
-        if(targetPage) targetPage.classList.add('active');
-        if(targetBtn) targetBtn.classList.add('active');
+        document.getElementById(`page${pageNum}`).classList.add('active');
+        event.target.classList.add('active');
         updateApp();
     }
 
@@ -325,26 +324,14 @@
     const importanceLevels = ["必要", "やや必要", "不要かも"];
     const neonColors = ["#00cec9", "#ff7675", "#fdcb6e", "#00b894", "#0984e3", "#6c5ce7", "#fd79a8", "#e84393", "#ffeaa7", "#74b9ff", "#a29bfe", "#55efc4"];
 
-    let playerLV = 1; let playerEXP = 0; let base64Image = "";
+    let playerLV = 1; let playerEXP = 0; let base64Image = ""; let currentImageMimeType = "image/jpeg";
     let dataList = []; let currentUser = null;
     let myShopChart, myImpChart, myWeeklyChart, myDailyChart;
+
     let global_savedMoney = 0; let global_waste = 0;
 
-    // 安全にDOMの値を読み書きするためのヘルパー
-    function getSafeValue(id, fallback = '') {
-        const el = document.getElementById(id);
-        return el ? el.value : fallback;
-    }
-
     window.onload = function() {
-        if(localStorage.getItem('gemini_api_key')) {
-            const apiEl = document.getElementById('apiKeyInput');
-            if(apiEl) apiEl.value = localStorage.getItem('gemini_api_key');
-        }
-        
-        const catSelect = document.getElementById('category'); if(catSelect) categories.forEach(c => catSelect.add(new Option(c, c)));
-        const impSelect = document.getElementById('importance'); if(impSelect) importanceLevels.forEach(i => impSelect.add(new Option(i, i)));
-
+        if(localStorage.getItem('gemini_api_key')) document.getElementById('apiKeyInput').value = localStorage.getItem('gemini_api_key');
         buildCalendarFramework();
         
         const fb = getFirebase();
@@ -353,21 +340,15 @@
         fb.auth().onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
-                const authText = document.getElementById('authStatusText');
-                const pName = document.getElementById('playerName');
-                const uZone = document.getElementById('userZone');
-                if(authText) authText.innerText = "🟢 クラウド同期中：オンラインの強固なデータベースに保護されています";
-                if(pName) pName.innerText = user.displayName.toUpperCase();
-                if(uZone) uZone.innerHTML = `<div class="user-info"><img class="user-pic" src="${user.photoURL}"> <button class="btn-action btn-pink" style="padding:5px 10px; font-size:0.8em;" onclick="logout()">ログアウト</button></div>`;
+                document.getElementById('authStatusText').innerText = "🟢 クラウド同期中：オンラインの強固なデータベースに保護されています";
+                document.getElementById('playerName').innerText = user.displayName.toUpperCase();
+                document.getElementById('userZone').innerHTML = `<div class="user-info"><img class="user-pic" src="${user.photoURL}"> <button class="btn-action btn-pink" style="padding:5px 10px; font-size:0.8em;" onclick="logout()">ログアウト</button></div>`;
                 loadCloudData();
             } else {
                 currentUser = null;
-                const authText = document.getElementById('authStatusText');
-                const pName = document.getElementById('playerName');
-                const uZone = document.getElementById('userZone');
-                if(authText) authText.innerText = "🔒 ゲストモード：ログインするとクラウド保存が解放されます";
-                if(pName) pName.innerText = "GUEST";
-                if(uZone) uZone.innerHTML = `<button class="btn-google" onclick="loginWithGoogle()"><img src='https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png' style='width:16px;'> Googleログイン</button>`;
+                document.getElementById('authStatusText').innerText = "🔒 ゲストモード：ログインするとクラウド保存が解放されます";
+                document.getElementById('playerName').innerText = "GUEST";
+                document.getElementById('userZone').innerHTML = `<button class="btn-google" onclick="loginWithGoogle()"><img src='https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png' style='width:16px;'> Googleログイン</button>`;
                 dataList = [
                     { id: 1, date: "2026-06-11", shop: "イオンネオモール", product: "牛乳 卵", amountExTax: 500, amountInTax: 550, category: "食費", importance: "必要", memo: "賞味期限アラート確認用サンプル" },
                     { id: 2, date: "2026-06-13", shop: "スターバックス", product: "贅沢フラペチーノ", amountExTax: 700, amountInTax: 770, category: "カフェ", importance: "不要かも", memo: "無駄遣いタップ確認用サンプル" }
@@ -379,7 +360,7 @@
 
     function loginWithGoogle() { try { const fb = getFirebase(); const provider = new fb.auth.GoogleAuthProvider(); fb.auth().signInWithRedirect(provider); } catch(e) { alert("認証エラー"); } }
     function logout() { getFirebase().auth().signOut(); }
-    function saveApiKey() { localStorage.setItem('gemini_api_key', getSafeValue('apiKeyInput')); }
+    function saveApiKey() { localStorage.setItem('gemini_api_key', document.getElementById('apiKeyInput').value); }
 
     function loadCloudData() {
         getFirebase().firestore().collection("users").doc(currentUser.uid).collection("receipts").orderBy("date", "asc")
@@ -401,6 +382,7 @@
         else { dataList = dataList.filter(item => item.id != id); updateApp(); }
     }
 
+    // 📝 データベース更新・保存用関数（編集モード用）
     function updateItem(id, updatedFields) {
         if(currentUser && typeof id === "string" && id.length > 5) {
             getFirebase().firestore().collection("users").doc(currentUser.uid).collection("receipts").doc(id).update(updatedFields);
@@ -411,8 +393,7 @@
     }
 
     function buildCalendarFramework() {
-        const cal = document.getElementById('monthlyCalendar'); if(!cal) return;
-        cal.innerHTML = '';
+        const cal = document.getElementById('monthlyCalendar'); cal.innerHTML = '';
         ["日","月","火","水","木","金","土"].forEach(h => cal.insertAdjacentHTML('beforeend', `<div class="cal-day-head">${h}</div>`));
         cal.insertAdjacentHTML('beforeend', `<div class="cal-cell" style="visibility:hidden;"></div>`);
         for(let day=1; day<=30; day++) { cal.insertAdjacentHTML('beforeend', `<div class="cal-cell" id="cal-day-${day}"><span class="cal-num">${day}</span><span class="cal-amt" id="cal-amt-${day}"></span></div>`); }
@@ -423,41 +404,128 @@
         saveReceipt({ date: "2026-06-01", shop: "サイバーモバイル", product: "スマホ通信代", amountExTax: 2980, amountInTax: 3278, category: "サブスク", importance: "必要", memo: "自動枠" });
     }
 
-    function handleFileSelect(input) { const file = input.files[0]; if (file) { const reader = new FileReader(); reader.onload = function(e) { base64Image = e.target.result.split(',')[1]; const ss = document.getElementById('scanStatus'); if(ss) ss.innerText = "📷 スキャン準備完了"; }; reader.readAsDataURL(file); } }
-    
+    function handleFileSelect(input) {
+        const file = input.files[0];
+        if (file) {
+            currentImageMimeType = file.type || "image/jpeg"; // 📌 png/webp等にも対応できるよう実際の形式を保持
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                base64Image = e.target.result.split(',')[1];
+                document.getElementById('scanStatus').innerText = "📷 スキャン準備完了";
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
     async function startAIScan() {
-        const apiKey = getSafeValue('apiKeyInput'); if(!apiKey || !base64Image) { alert("キーと画像を選んでね！"); return; }
-        const ss = document.getElementById('scanStatus'); if(ss) ss.innerText = "⏳ AI解析中...";
-        const promptText = `JSON形式だけでレシートデータを解析して。`;
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const apiKey = document.getElementById('apiKeyInput').value;
+        if(!apiKey || !base64Image) { alert("キーと画像を選んでね！"); return; }
+
+        const scanBtn = document.getElementById('aiScanBtn');
+        if(scanBtn) scanBtn.disabled = true;
+        document.getElementById('scanStatus').innerText = "⏳ AI解析中...";
+
+        // 🧠 何を読み取るか・どう判断するかをAIに明示的に指示
+        const promptText = `これは日本のレシート画像です。内容を読み取り、指定されたJSONスキーマの形式だけで出力してください。
+- 金額は数字のみ（¥やカンマを付けない）
+- 日付が読み取れない場合は空文字にする
+- category と importance は、与えられた選択肢の中から最も近いものを必ず1つだけ選ぶこと`;
+
+        // 📋 出力フォーマットをスキーマとして明示（カテゴリ・必要度は選択肢を直接渡す）
+        const receiptSchema = {
+            type: "OBJECT",
+            properties: {
+                date: { type: "STRING", description: "購入日。YYYY-MM-DD形式。読み取れなければ空文字" },
+                shop: { type: "STRING", description: "店舗名" },
+                product: { type: "STRING", description: "購入した商品名。複数ある場合はスペース区切りで列挙" },
+                amountExTax: { type: "INTEGER", description: "税抜金額。読み取れなければ0" },
+                amountInTax: { type: "INTEGER", description: "税込の合計支払金額" },
+                category: { type: "STRING", enum: categories, description: "最も近いカテゴリを1つだけ選択" },
+                importance: { type: "STRING", enum: importanceLevels, description: "この買い物の必要度を1つだけ選択" },
+                memo: { type: "STRING", description: "補足メモ。なければ空文字" }
+            },
+            required: ["shop", "product", "amountInTax", "category", "importance"]
+        };
+
+        const model = "gemini-2.5-flash";
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+
         try {
-            const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ parts: [{ text: promptText }, { inlineData: { mimeType: "image/jpeg", data: base64Image } }] }] }) });
-            const result = await response.json(); 
-            
-            // 【安全化】SyntaxErrorの原因だった正規表現のスラッシュを取り除き、文字列置換(split&join)に変更しました
-            let rawText = result.candidates[0].content.parts[0].text;
-            let cleanJson = rawText.split("```json").join("").split("```").join("").trim();
+            const response = await fetch(url, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [
+                        { text: promptText },
+                        { inlineData: { mimeType: currentImageMimeType, data: base64Image } }
+                    ] }],
+                    // 🎯 JSON以外の文章が混入しないよう、構造化出力を強制
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: receiptSchema
+                    }
+                })
+            });
+
+            const result = await response.json();
+
+            // 🚨 HTTPエラー（キー無効・権限なし・モデル名違い・レート制限）を個別に判定して表示
+            if (!response.ok) {
+                const msg = result?.error?.message || "";
+                if (response.status === 400 && /API key not valid/i.test(msg)) {
+                    throw new Error("APIキーが無効です。AI Studioで発行したキーをコピーし直してください。");
+                } else if (response.status === 403) {
+                    throw new Error("APIキーに権限がありません。キーの制限設定やAPIの有効化をご確認ください。");
+                } else if (response.status === 404) {
+                    throw new Error(`モデル「${model}」が見つかりません（廃止・名称変更の可能性）。`);
+                } else if (response.status === 429) {
+                    throw new Error("利用上限（レート制限/無料枠超過）に達しました。少し待って再試行してください。");
+                } else {
+                    throw new Error(msg || `APIエラー（HTTP ${response.status}）`);
+                }
+            }
+
+            const candidate = result?.candidates?.[0];
+            if (!candidate) {
+                throw new Error("AIから有効な応答が得られませんでした（画像が不鮮明、または安全フィルタの可能性）。");
+            }
+            if (candidate.finishReason === "SAFETY") {
+                throw new Error("画像が安全フィルタにより解析できませんでした。");
+            }
+
+            const rawText = candidate?.content?.parts?.[0]?.text;
+            if (!rawText) { throw new Error("AIの応答にテキストが含まれていませんでした。"); }
+
+            const cleanJson = rawText.replace(/```json/g, "").replace(/```/g, "").trim();
             const receiptData = JSON.parse(cleanJson);
-            
-            const elDate = document.getElementById('date'); if(elDate) elDate.value = receiptData.date;
-            const elShop = document.getElementById('shop'); if(elShop) elShop.value = receiptData.shop;
-            const elProd = document.getElementById('product'); if(elProd) elProd.value = receiptData.product;
-            const elInTax = document.getElementById('amountInTax'); if(elInTax) elInTax.value = receiptData.amountInTax;
-            const elCat = document.getElementById('category'); if(elCat) elCat.value = receiptData.category;
-            const elImp = document.getElementById('importance'); if(elImp) elImp.value = receiptData.importance;
-            
-            if(ss) ss.innerText = "✅ 解析完了！";
-        } catch(e) { if(ss) ss.innerText = "❌ 解析エラー"; }
+
+            // ✅ フォームへ反映（値が空・選択肢外の場合は元の状態を保持）
+            if (receiptData.date) document.getElementById('date').value = receiptData.date;
+            document.getElementById('shop').value = receiptData.shop || "";
+            document.getElementById('product').value = receiptData.product || "";
+            if (receiptData.amountExTax) document.getElementById('amountExTax').value = receiptData.amountExTax;
+            document.getElementById('amountInTax').value = receiptData.amountInTax || "";
+            if (categories.includes(receiptData.category)) document.getElementById('category').value = receiptData.category;
+            if (importanceLevels.includes(receiptData.importance)) document.getElementById('importance').value = receiptData.importance;
+            if (receiptData.memo) document.getElementById('memo').value = receiptData.memo;
+
+            document.getElementById('scanStatus').innerText = "✅ 解析完了！内容を確認して登録してね";
+        } catch(e) {
+            console.error("Gemini解析エラー:", e);
+            document.getElementById('scanStatus').innerText = `❌ 解析エラー: ${e.message}`;
+        } finally {
+            if(scanBtn) scanBtn.disabled = false;
+        }
     }
 
-    function calcTax() { const ex = getSafeValue('amountExTax'); if(ex) { const el = document.getElementById('amountInTax'); if(el) el.value = Math.round(ex*1.1); } }
-    function calcChange() { const In = getSafeValue('amountInTax'); const dep = getSafeValue('deposit'); if(In && dep) { const el = document.getElementById('change'); if(el) el.value = dep - In >= 0 ? dep - In : 0; } }
-    
-    function togglePanel(id) { 
-        document.querySelectorAll('.detail-panel').forEach(p => { if(p.id !== id) p.classList.remove('active'); }); 
-        const p = document.getElementById(id); if(p) p.classList.toggle('active'); 
-    }
+    function calcTax() { const ex = document.getElementById('amountExTax').value; if(ex) document.getElementById('amountInTax').value = Math.round(ex*1.1); }
+    function calcChange() { const In = document.getElementById('amountInTax').value; const dep = document.getElementById('deposit').value; if(In && dep) document.getElementById('change').value = dep - In >= 0 ? dep - In : 0; }
+    function togglePanel(id) { document.querySelectorAll('.detail-panel').forEach(p => { if(p.id !== id) p.classList.remove('active'); }); const p = document.getElementById(id); if(p) p.classList.toggle('active'); }
 
+    const catSelect = document.getElementById('category'); categories.forEach(c => catSelect.add(new Option(c, c)));
+    const impSelect = document.getElementById('importance'); importanceLevels.forEach(i => impSelect.add(new Option(i, i)));
+
+    // 💾 インライン編集切り替えロジック
     function enterEditMode(id) {
         const row = document.getElementById(`row-${id}`);
         const item = dataList.find(i => i.id == id);
@@ -488,19 +556,20 @@
 
     function saveEditField(id) {
         const updated = {
-            date: getSafeValue(`edit-date-${id}`),
-            shop: getSafeValue(`edit-shop-${id}`),
-            product: getSafeValue(`edit-product-${id}`),
-            amountInTax: parseInt(getSafeValue(`edit-amt-${id}`)) || 0,
-            category: getSafeValue(`edit-cat-${id}`),
-            importance: getSafeValue(`edit-imp-${id}`),
-            memo: getSafeValue(`edit-memo-${id}`)
+            date: document.getElementById(`edit-date-${id}`).value,
+            shop: document.getElementById(`edit-shop-${id}`).value,
+            product: document.getElementById(`edit-product-${id}`).value,
+            amountInTax: parseInt(document.getElementById(`edit-amt-${id}`).value) || 0,
+            category: document.getElementById(`edit-cat-${id}`).value,
+            importance: document.getElementById(`edit-imp-${id}`).value,
+            memo: document.getElementById(`edit-memo-${id}`).value
         };
         updateItem(id, updated);
     }
 
+    // 🔄 アプリ全体のレンダリングコア
     function updateApp() {
-        const selectedMonth = getSafeValue('targetMonthSelect', '2026-06');
+        const selectedMonth = document.getElementById('targetMonthSelect').value;
         
         const tbody = document.querySelector('#receiptTable tbody'); 
         const totalListDiv = document.getElementById('panel-total-list');
@@ -518,12 +587,14 @@
         let weeklyCounts = { "1週目":0, "2週目":0, "3週目":0, "4週目":0 };
         let dailyCounts = {}; for(let d=1; d<=30; d++) dailyCounts[d] = 0;
 
-        let detectedStockItems = []; 
-        let registeredShops = new Set(); 
+        let detectedStockItems = []; // 期限判定オブジェクト用配列
+        let registeredShops = new Set(); // お店サジェスト用履歴保持
 
         dataList.forEach(item => {
+            // お店の履歴を記録
             if(item.shop) registeredShops.add(item.shop);
 
+            // ③ マスターデータベーステーブル構築（個別ID行を持たせる）
             if(tbody) {
                 tbody.insertAdjacentHTML('beforeend', `<tr id="row-${item.id}">
                     <td>${item.date}</td><td>${item.shop}</td><td>${item.product}</td><td><strong>¥${item.amountInTax}</strong></td>
@@ -536,13 +607,16 @@
                 </tr>`);
             }
 
+            // 📅 選択月フィルタ
             if (item.date.startsWith(selectedMonth)) {
                 total += item.amountInTax;
 
+                // 1ページ目：通常支出内訳
                 if(totalListDiv) {
                     totalListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item"><span>${item.date} [${item.shop}] - ${item.product}</span><strong>¥${item.amountInTax}</strong></div>`);
                 }
 
+                // 1ページ目：節約候補（不要かも）タップ内訳の蓄積
                 if(item.importance === "不要かも") {
                     global_waste += item.amountInTax;
                     if(wasteListDiv) {
@@ -565,8 +639,9 @@
                 const calEl = document.getElementById(`cal-amt-${dayNum}`);
                 if(calEl) calEl.innerText = `¥${dailyCounts[dayNum].toLocaleString()}`;
 
+                // ⏰ 賞味期限シミュレーションデータの生成（購入日に基づく）
                 const buyDate = new Date(item.date);
-                const currentSimulatedTime = new Date("2026-06-13"); 
+                const currentSimulatedTime = new Date("2026-06-13"); // 家計簿システム上の現在日時
                 const daysElapsed = Math.floor((currentSimulatedTime - buyDate) / (1000 * 60 * 60 * 24));
 
                 const lowerProd = item.product.toLowerCase();
@@ -580,7 +655,7 @@
                 }
                 if(lowerProd.includes("肉") || lowerProd.includes("パック")) {
                     let rem = 2 - daysElapsed;
-                    detectedStockItems.push({ name: "🥩 生肉パック", info: rem <= 0 ? "🚨 期限切れ警告！" : rem <= 2 ? `🚨 残り${rem}日：2日前！すぐに冷凍するか調理して！` : `📊 残り ${rem} 日`, priority: rem <= 2 ? 95 : rem });
+                    detectedStockItems.push({ name: "🥩 生肉パック", info: rem <= 0 ? "🚨 消費期限切れ警告！" : rem <= 2 ? `🚨 残り${rem}日：2日前！すぐに冷凍するか調理して！` : `📊 残り ${rem} 日`, priority: rem <= 2 ? 95 : rem });
                 }
                 if(lowerProd.includes("シャンプー")) {
                     let rem = 30 - daysElapsed;
@@ -589,12 +664,14 @@
             }
         });
 
-        if(datalistEl) registeredShops.forEach(s => { datalistEl.insertAdjacentHTML('beforeend', `<option value="${s}"></option>`); });
+        // 🛍️ お店履歴オートコンプリート（datalist）を同期
+        registeredShops.forEach(s => { if(datalistEl) datalistEl.insertAdjacentHTML('beforeend', `<option value="${s}"></option>`); });
 
+        // 統計パネルテキスト反映
         if(document.getElementById('totalAmount')) document.getElementById('totalAmount').innerText = `¥${total.toLocaleString()}`;
         if(document.getElementById('wasteAmount')) document.getElementById('wasteAmount').innerText = `¥${global_waste.toLocaleString()}`;
 
-        const budget = parseInt(getSafeValue('monthlyBudget', '50000')) || 50000;
+        const budget = parseInt(document.getElementById('monthlyBudget').value) || 50000;
         let hpPercent = ((budget - total) / budget) * 100; if(hpPercent < 0) hpPercent = 0;
         if(document.getElementById('hpBar')) document.getElementById('hpBar').style.width = `${hpPercent}%`;
         if(document.getElementById('hpBarLabel')) document.getElementById('hpBarLabel').innerText = `HP: ¥${(budget - total).toLocaleString()} / ¥${budget.toLocaleString()} (${hpPercent.toFixed(0)}%)`;
@@ -603,8 +680,7 @@
         if(document.getElementById('savedAmount')) document.getElementById('savedAmount').innerText = `¥${global_savedMoney.toLocaleString()}`;
         if(document.getElementById('panel-save-info')) document.getElementById('panel-save-info').innerText = `現在のセーフ資金残高は ¥${global_savedMoney.toLocaleString()} です。`;
 
-        const wishName = getSafeValue('wishName', '夢のご褒美アイテム'); 
-        const wishPrice = parseInt(getSafeValue('wishPrice', '12000')) || 1;
+        const wishName = document.getElementById('wishName').value; const wishPrice = parseInt(document.getElementById('wishPrice').value) || 1;
         let wishPercent = (global_savedMoney / wishPrice) * 100; if(wishPercent > 100) wishPercent = 100;
         if(document.getElementById('wishBar')) document.getElementById('wishBar').style.width = `${wishPercent}%`;
         if(document.getElementById('wishBarLabel')) document.getElementById('wishBarLabel').innerText = `「${wishName}」まであと ¥${(wishPrice - global_savedMoney > 0 ? wishPrice - global_savedMoney : 0).toLocaleString()} (${wishPercent.toFixed(0)}%)`;
@@ -613,6 +689,7 @@
         if(document.getElementById('playerLevel')) document.getElementById('playerLevel').innerText = playerLV;
         if(document.getElementById('playerExp')) document.getElementById('playerExp').innerText = `${playerEXP % 100}/100`;
 
+        // 🥇 優先度に基づき賞味期限警告をハイパーソート（緊急を上へ）
         detectedStockItems.sort((a, b) => b.priority - a.priority);
         const stockListEl = document.getElementById('aiStockAnalyzerList');
         if(stockListEl) {
@@ -684,35 +761,16 @@
         XLSX.writeFile(wb, "parsimonia_hybrid_data.xlsx");
     }
 
-    // DOMContentLoadedを使い、HTML構造が読み終わってから全てのイベントや安全ガードを施す
-    document.addEventListener("DOMContentLoaded", function() {
-        const form = document.getElementById('receiptForm');
-        if(form) {
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const newItem = {
-                    date: getSafeValue('date'), 
-                    shop: getSafeValue('shop'), 
-                    product: getSafeValue('product'),
-                    amountExTax: parseInt(getSafeValue('amountExTax')) || 0, 
-                    amountInTax: parseInt(getSafeValue('amountInTax')) || 0,
-                    deposit: parseInt(getSafeValue('deposit')) || 0, 
-                    change: parseInt(getSafeValue('change')) || 0,
-                    category: getSafeValue('category'), 
-                    importance: getSafeValue('importance'), 
-                    memo: getSafeValue('memo')
-                };
-                saveReceipt(newItem);
-                
-                const elShop = document.getElementById('shop'); if(elShop) elShop.value = ''; 
-                const elProd = document.getElementById('product'); if(elProd) elProd.value = ''; 
-                const elExTax = document.getElementById('amountExTax'); if(elExTax) elExTax.value = ''; 
-                const elInTax = document.getElementById('amountInTax'); if(elInTax) elInTax.value = ''; 
-                const elDep = document.getElementById('deposit'); if(elDep) elDep.value = ''; 
-                const elChange = document.getElementById('change'); if(elChange) elChange.value = ''; 
-                const elMemo = document.getElementById('memo'); if(elMemo) elMemo.value = '';
-            });
-        }
+    document.getElementById('receiptForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const newItem = {
+            date: document.getElementById('date').value, shop: document.getElementById('shop').value, product: document.getElementById('product').value,
+            amountExTax: parseInt(document.getElementById('amountExTax').value) || 0, amountInTax: parseInt(document.getElementById('amountInTax').value),
+            deposit: parseInt(document.getElementById('deposit').value) || 0, change: parseInt(document.getElementById('change').value) || 0,
+            category: document.getElementById('category').value, importance: document.getElementById('importance').value, memo: document.getElementById('memo').value
+        };
+        saveReceipt(newItem);
+        document.getElementById('shop').value = ''; document.getElementById('product').value = ''; document.getElementById('amountExTax').value = ''; document.getElementById('amountInTax').value = ''; document.getElementById('deposit').value = ''; document.getElementById('change').value = ''; document.getElementById('memo').value = '';
     });
 </script>
 </body>
