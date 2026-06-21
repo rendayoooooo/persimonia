@@ -336,12 +336,7 @@
         buildCalendarFramework();
         
         const fb = getFirebase();
-        fb.auth().getRedirectResult().then(result => { if (result && result.user) { console.log("Login Success"); } }).catch(e => {
-            // 🚨 ここでauth/unauthorized-domainが出る場合、Firebaseの「承認済みドメイン」に
-            // 今動かしているドメイン(例: xxxx.github.io)が登録されていないのが原因
-            console.error("Googleログインエラー:", e);
-            alert(`Googleログインに失敗しました: ${e.code || e.message}\n\nFirebaseコンソールの「Authentication > Settings > 承認済みドメイン」に、このサイトのドメインが登録されているか確認してください。`);
-        });
+        // 📌 popup方式に変更したのでgetRedirectResult()は不要（ログイン結果はloginWithGoogle内で直接受け取る）
 
         fb.auth().onAuthStateChanged(user => {
             if (user) {
@@ -367,7 +362,24 @@
         });
     }
 
-    function loginWithGoogle() { try { const fb = getFirebase(); const provider = new fb.auth.GoogleAuthProvider(); fb.auth().signInWithRedirect(provider); } catch(e) { alert("認証エラー"); } }
+    function loginWithGoogle() {
+        const fb = getFirebase();
+        const provider = new fb.auth.GoogleAuthProvider();
+        // 🔁 redirect方式だとEdge等の「トラッキング防止」でストレージがブロックされ、
+        // Google画面には行けてもログインが完了しないことがあるため、popup方式に変更
+        fb.auth().signInWithPopup(provider)
+            .then(result => { console.log("Login Success", result.user.displayName); })
+            .catch(e => {
+                console.error("Googleログインエラー:", e);
+                if (e.code === "auth/popup-blocked") {
+                    alert("ポップアップがブロックされました。ブラウザのポップアップブロックを解除して再度お試しください。");
+                } else if (e.code === "auth/unauthorized-domain") {
+                    alert("このドメインはFirebaseで承認されていません。Firebaseコンソールの「Authentication > Settings > 承認済みドメイン」に、このサイトのドメインを追加してください。");
+                } else if (e.code !== "auth/cancelled-popup-request" && e.code !== "auth/popup-closed-by-user") {
+                    alert(`Googleログインに失敗しました: ${e.code || e.message}`);
+                }
+            });
+    }
     function logout() { getFirebase().auth().signOut(); }
     function saveApiKey() { localStorage.setItem('gemini_api_key', document.getElementById('apiKeyInput').value); }
 
