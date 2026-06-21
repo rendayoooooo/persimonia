@@ -125,7 +125,7 @@
 
     <div id="page1" class="app-page active">
         <div class="login-card">
-            <div id="authStatusText" style="color:var(--neon-yellow);">🔒 クラウド未接続：ログインすると個人データが自動同期されます</div>
+            <div id="authStatusText" style="color:var(--neon-yellow);">ログインしてください</div>
             <div id="userZone">
                 <button class="btn-google" onclick="loginWithGoogle()">
                     <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png" alt="G" style="width:16px;">
@@ -346,18 +346,21 @@
         fb.auth().onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
-                document.getElementById('authStatusText').innerText = "🟢 クラウド同期中：オンラインの強固なデータベースに保護されています";
+                document.getElementById('authStatusText').innerText = "ようこそparsimoniaへ！";
+                document.getElementById('authStatusText').style.color = "var(--neon-green)";
                 document.getElementById('playerName').innerText = user.displayName.toUpperCase();
                 document.getElementById('userZone').innerHTML = `<div class="user-info"><img class="user-pic" src="${user.photoURL}"> <button class="btn-action btn-pink" style="padding:5px 10px; font-size:0.8em;" onclick="logout()">ログアウト</button></div>`;
                 loadCloudData();
             } else {
                 currentUser = null;
-                document.getElementById('authStatusText').innerText = "🔒 ゲストモード：ログインするとクラウド保存が解放されます";
+                document.getElementById('authStatusText').innerText = "ログインしてください";
+                document.getElementById('authStatusText').style.color = "var(--neon-yellow)";
                 document.getElementById('playerName').innerText = "GUEST";
                 document.getElementById('userZone').innerHTML = `<button class="btn-google" onclick="loginWithGoogle()"><img src='https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png' style='width:16px;'> Googleログイン</button>`;
+                // 📌 isSample:true を付けておくことで、本物のデータが登録された時に見分けて消せるようにする
                 dataList = [
-                    { id: 1, date: "2026-06-11", shop: "イオンネオモール", product: "牛乳 卵", amountExTax: 500, amountInTax: 550, category: "食費", importance: "必要", memo: "賞味期限アラート確認用サンプル" },
-                    { id: 2, date: "2026-06-13", shop: "スターバックス", product: "贅沢フラペチーノ", amountExTax: 700, amountInTax: 770, category: "カフェ", importance: "不要かも", memo: "無駄遣いタップ確認用サンプル" }
+                    { id: 1, date: "2026-06-11", shop: "イオンネオモール", product: "牛乳 卵", amountExTax: 500, amountInTax: 550, category: "食費", importance: "必要", memo: "賞味期限アラート確認用サンプル", isSample: true },
+                    { id: 2, date: "2026-06-13", shop: "スターバックス", product: "贅沢フラペチーノ", amountExTax: 700, amountInTax: 770, category: "カフェ", importance: "不要かも", memo: "無駄遣いタップ確認用サンプル", isSample: true }
                 ];
                 updateApp();
             }
@@ -403,7 +406,12 @@
                     console.error("Firestore保存エラー:", error);
                     showCloudToast(`❌ クラウド保存に失敗: ${error.message}`, true);
                 });
-        } else { dataList.push({ id: Date.now(), ...newItem }); updateApp(); }
+        } else {
+            // 🧹 ゲストモードのサンプルデータは、本物のデータが1件でも登録された時点で取り除く
+            dataList = dataList.filter(item => !item.isSample);
+            dataList.push({ id: Date.now(), ...newItem });
+            updateApp();
+        }
     }
 
     function deleteItem(id) {
