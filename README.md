@@ -117,6 +117,17 @@
 <div class="container">
     <h1>⚡ parsimonia 〜家計簿アプリ〜 ⚡</h1>
 
+    <div id="loginGate" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; text-align:center; padding:20px;">
+        <div class="card" style="border: 2px solid var(--neon-blue); box-shadow: 0 0 20px rgba(0,206,201,0.3); max-width:400px;">
+            <p style="color:#ccc; margin-top:0; margin-bottom:20px;">Googleアカウントでログインしてはじめましょう</p>
+            <button class="btn-google" onclick="loginWithGoogle()" style="font-size:1.05em; padding:12px 24px; margin:0 auto;">
+                <img src="https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png" alt="G" style="width:18px;">
+                Googleアカウントでログイン
+            </button>
+        </div>
+    </div>
+
+    <div id="mainApp" style="display:none;">
     <div class="tab-navigation">
         <button class="tab-btn active" onclick="switchPage(1)">📊 メインステータス面</button>
         <button class="tab-btn" onclick="switchPage(2)">📸 スキャン＆登録面</button>
@@ -134,14 +145,6 @@
             </div>
         </div>
         <div id="cloudToast" style="display:none; background:#1a1a2e; border:2px solid var(--neon-green); color:#fff; padding:8px 14px; border-radius:8px; margin:-10px 0 20px 0; font-size:0.85em;"></div>
-
-        <div class="status-header">
-            <div class="status-item">PLAYER: <span class="status-val" id="playerName" style="color:#ff7675;">GUEST</span></div>
-            <div class="status-item">節約LV: <span class="status-val" id="playerLevel">1</span></div>
-            <div class="status-item">EXP: <span class="status-val" id="playerExp">0/100</span></div>
-            <div class="status-item">現在の称号: <span class="status-val" id="playerTitle" style="color:#55efc4;">ノーマル市民</span></div>
-            <div class="status-item">入力ストリーク: <span class="status-val" id="streakDays">1日連続中！🔥</span></div>
-        </div>
 
         <div class="ai-room" id="aiRoom" style="margin-bottom:25px;">
             <div class="ai-avatar" id="aiAvatar">😺</div>
@@ -264,9 +267,9 @@
             <div class="card">
                 <h2>💸 ② リアルタイム集計 ＆ ご褒美設定</h2>
                 <div class="form-row" style="background:#252525; padding:15px; border-radius:12px; margin-bottom:20px;">
-                    <div><label>今月の予算</label><input type="number" id="monthlyBudget" value="50000" oninput="updateApp()"></div>
-                    <div><label>ご褒美アイテム</label><input type="text" id="wishName" value="欲しかったアウター🧥" oninput="updateApp()"></div>
-                    <div><label>アイテムの値段</label><input type="number" id="wishPrice" value="12000" oninput="updateApp()"></div>
+                    <div><label>今月の予算</label><input type="number" id="monthlyBudget" value="50000" oninput="updateApp()" onchange="saveSettings()"></div>
+                    <div><label>ご褒美アイテム</label><input type="text" id="wishName" value="欲しかったアウター🧥" oninput="updateApp()" onchange="saveSettings()"></div>
+                    <div><label>アイテムの値段</label><input type="number" id="wishPrice" value="12000" oninput="updateApp()" onchange="saveSettings()"></div>
                 </div>
                 <p style="font-size:0.9em; color:#aaa; line-height:1.6;">
                     予算枠や夢のご褒美アイテムを入力すると、ダッシュボード上のHPインジケーターにダイレクトに反映・計算されます。
@@ -293,6 +296,7 @@
                 <tbody></tbody>
             </table>
         </div>
+    </div>
     </div>
 </div>
 
@@ -325,7 +329,19 @@
     const importanceLevels = ["必要", "やや必要", "不要かも"];
     const neonColors = ["#00cec9", "#ff7675", "#fdcb6e", "#00b894", "#0984e3", "#6c5ce7", "#fd79a8", "#e84393", "#ffeaa7", "#74b9ff", "#a29bfe", "#55efc4"];
 
-    let playerLV = 1; let playerEXP = 0; let base64Image = ""; let currentImageMimeType = "image/jpeg";
+    // 🛡️ ユーザー入力（店名・商品名・メモ等）をHTMLとして埋め込む前に必ず通すエスケープ処理
+    // これがないと、入力やAIスキャンの読み取り結果に<script>等が混入した場合にそのまま実行されてしまう
+    function escapeHtml(str) {
+        if (str === null || str === undefined) return '';
+        return String(str)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    let base64Image = ""; let currentImageMimeType = "image/jpeg";
     let dataList = []; let currentUser = null;
     let myShopChart, myImpChart, myWeeklyChart, myDailyChart;
 
@@ -341,16 +357,19 @@
         fb.auth().onAuthStateChanged(user => {
             if (user) {
                 currentUser = user;
+                document.getElementById('loginGate').style.display = 'none';
+                document.getElementById('mainApp').style.display = 'block';
                 document.getElementById('authStatusText').innerText = "ようこそparsimoniaへ！";
                 document.getElementById('authStatusText').style.color = "var(--neon-green)";
-                document.getElementById('playerName').innerText = user.displayName.toUpperCase();
                 document.getElementById('userZone').innerHTML = `<div class="user-info"><img class="user-pic" src="${user.photoURL}"> <button class="btn-action btn-pink" style="padding:5px 10px; font-size:0.8em;" onclick="logout()">ログアウト</button></div>`;
                 loadCloudData();
+                loadSettings();
             } else {
                 currentUser = null;
+                document.getElementById('loginGate').style.display = 'flex';
+                document.getElementById('mainApp').style.display = 'none';
                 document.getElementById('authStatusText').innerText = "ログインしてください";
                 document.getElementById('authStatusText').style.color = "var(--neon-yellow)";
-                document.getElementById('playerName').innerText = "GUEST";
                 document.getElementById('userZone').innerHTML = `<button class="btn-google" onclick="loginWithGoogle()"><img src='https://fonts.gstatic.com/s/i/productlogos/googleg/v6/web-24dp/logo_googleg_color_1x_web_24dp.png' style='width:16px;'> Googleログイン</button>`;
                 // 📌 isSample:true を付けておくことで、本物のデータが登録された時に見分けて消せるようにする
                 dataList = [
@@ -401,13 +420,45 @@
         .onSnapshot(snapshot => {
             dataList = [];
             snapshot.forEach(doc => { dataList.push({ id: doc.id, ...doc.data() }); });
-            playerEXP = dataList.length * 15;
             updateApp();
         }, error => {
             // 🚨 ここが発火する＝Firestoreのセキュリティルールやプロジェクト設定が原因の可能性が高い
             console.error("Firestore読み込みエラー:", error);
             showCloudToast(`❌ クラウドからの読み込みに失敗: ${error.message}`, true);
         });
+    }
+
+    // 💰 予算・ご褒美設定をクラウド(users/{uid}ドキュメント)に保存・読み込み
+    function loadSettings() {
+        getFirebase().firestore().collection("users").doc(currentUser.uid).get()
+            .then(doc => {
+                const s = doc.exists ? doc.data().settings : null;
+                if (s) {
+                    if (s.monthlyBudget != null) document.getElementById('monthlyBudget').value = s.monthlyBudget;
+                    if (s.wishName != null) document.getElementById('wishName').value = s.wishName;
+                    if (s.wishPrice != null) document.getElementById('wishPrice').value = s.wishPrice;
+                }
+                updateApp();
+            })
+            .catch(error => {
+                console.error("設定読み込みエラー:", error);
+                showCloudToast(`❌ 設定の読み込みに失敗: ${error.message}`, true);
+            });
+    }
+
+    function saveSettings() {
+        if (!currentUser) return; // ゲストモードでは保存しない
+        const settings = {
+            monthlyBudget: parseInt(document.getElementById('monthlyBudget').value) || 50000,
+            wishName: document.getElementById('wishName').value,
+            wishPrice: parseInt(document.getElementById('wishPrice').value) || 0
+        };
+        getFirebase().firestore().collection("users").doc(currentUser.uid).set({ settings }, { merge: true })
+            .then(() => showCloudToast("✅ 設定を保存しました"))
+            .catch(error => {
+                console.error("設定保存エラー:", error);
+                showCloudToast(`❌ 設定の保存に失敗: ${error.message}`, true);
+            });
     }
 
     function saveReceipt(newItem) {
@@ -479,7 +530,8 @@
 
     async function startAIScan() {
         const apiKey = document.getElementById('apiKeyInput').value;
-        if(!apiKey || !base64Image) { alert("キーと画像を選んでね！"); return; }
+        if(!apiKey) { alert("Gemini APIキーが入力されていません。「🔑 ログ＆システム面」タブでキーを入力してください。"); return; }
+        if(!base64Image) { alert("レシートの画像を選んでください。"); return; }
 
         const scanBtn = document.getElementById('aiScanBtn');
         if(scanBtn) scanBtn.disabled = true;
@@ -592,9 +644,9 @@
         if(!row || !item) return;
 
         row.innerHTML = `
-            <td><input type="date" id="edit-date-${id}" value="${item.date}" style="padding:4px;"></td>
-            <td><input type="text" id="edit-shop-${id}" value="${item.shop}" style="padding:4px;"></td>
-            <td><input type="text" id="edit-product-${id}" value="${item.product}" style="padding:4px;"></td>
+            <td><input type="date" id="edit-date-${id}" value="${escapeHtml(item.date)}" style="padding:4px;"></td>
+            <td><input type="text" id="edit-shop-${id}" value="${escapeHtml(item.shop)}" style="padding:4px;"></td>
+            <td><input type="text" id="edit-product-${id}" value="${escapeHtml(item.product)}" style="padding:4px;"></td>
             <td><input type="number" id="edit-amt-${id}" value="${item.amountInTax}" style="padding:4px; width:80px;"></td>
             <td>
                 <select id="edit-cat-${id}" style="padding:4px;">
@@ -606,7 +658,7 @@
                     ${importanceLevels.map(i => `<option value="${i}" ${item.importance===i?'selected':''}>${i}</option>`).join('')}
                 </select>
             </td>
-            <td><input type="text" id="edit-memo-${id}" value="${item.memo||''}" style="padding:4px;"></td>
+            <td><input type="text" id="edit-memo-${id}" value="${escapeHtml(item.memo||'')}" style="padding:4px;"></td>
             <td>
                 <button class="btn-edit" onclick="saveEditField('${id}')">保存</button>
                 <button class="btn-delete" onclick="updateApp()">取消</button>
@@ -657,9 +709,9 @@
             // ③ マスターデータベーステーブル構築（個別ID行を持たせる）
             if(tbody) {
                 tbody.insertAdjacentHTML('beforeend', `<tr id="row-${item.id}">
-                    <td>${item.date}</td><td>${item.shop}</td><td>${item.product}</td><td><strong>¥${item.amountInTax}</strong></td>
-                    <td>${item.category}</td><td><span class="badge ${item.importance==='必要'?'badge-needed':item.importance==='やや必要'?'badge-maybe':'badge-no'}">${item.importance}</span></td>
-                    <td>${item.memo||''}</td>
+                    <td>${escapeHtml(item.date)}</td><td>${escapeHtml(item.shop)}</td><td>${escapeHtml(item.product)}</td><td><strong>¥${item.amountInTax}</strong></td>
+                    <td>${escapeHtml(item.category)}</td><td><span class="badge ${item.importance==='必要'?'badge-needed':item.importance==='やや必要'?'badge-maybe':'badge-no'}">${escapeHtml(item.importance)}</span></td>
+                    <td>${escapeHtml(item.memo||'')}</td>
                     <td>
                         <button class="btn-edit" onclick="enterEditMode('${item.id}')">編集</button>
                         <button class="btn-delete" onclick="deleteItem('${item.id}')">削除</button>
@@ -673,14 +725,14 @@
 
                 // 1ページ目：通常支出内訳
                 if(totalListDiv) {
-                    totalListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item"><span>${item.date} [${item.shop}] - ${item.product}</span><strong>¥${item.amountInTax}</strong></div>`);
+                    totalListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item"><span>${escapeHtml(item.date)} [${escapeHtml(item.shop)}] - ${escapeHtml(item.product)}</span><strong>¥${item.amountInTax}</strong></div>`);
                 }
 
                 // 1ページ目：節約候補（不要かも）タップ内訳の蓄積
                 if(item.importance === "不要かも") {
                     global_waste += item.amountInTax;
                     if(wasteListDiv) {
-                        wasteListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item" style="color:var(--neon-yellow);"><span>⚠️ ${item.date} [${item.shop}] ${item.product}</span><strong>¥${item.amountInTax}</strong></div>`);
+                        wasteListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item" style="color:var(--neon-yellow);"><span>⚠️ ${escapeHtml(item.date)} [${escapeHtml(item.shop)}] ${escapeHtml(item.product)}</span><strong>¥${item.amountInTax}</strong></div>`);
                     }
                 }
 
@@ -725,7 +777,7 @@
         });
 
         // 🛍️ お店履歴オートコンプリート（datalist）を同期
-        registeredShops.forEach(s => { if(datalistEl) datalistEl.insertAdjacentHTML('beforeend', `<option value="${s}"></option>`); });
+        registeredShops.forEach(s => { if(datalistEl) datalistEl.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(s)}"></option>`); });
 
         // 統計パネルテキスト反映
         if(document.getElementById('totalAmount')) document.getElementById('totalAmount').innerText = `¥${total.toLocaleString()}`;
@@ -744,10 +796,6 @@
         let wishPercent = (global_savedMoney / wishPrice) * 100; if(wishPercent > 100) wishPercent = 100;
         if(document.getElementById('wishBar')) document.getElementById('wishBar').style.width = `${wishPercent}%`;
         if(document.getElementById('wishBarLabel')) document.getElementById('wishBarLabel').innerText = `「${wishName}」まであと ¥${(wishPrice - global_savedMoney > 0 ? wishPrice - global_savedMoney : 0).toLocaleString()} (${wishPercent.toFixed(0)}%)`;
-
-        playerLV = Math.floor(playerEXP / 100) + 1;
-        if(document.getElementById('playerLevel')) document.getElementById('playerLevel').innerText = playerLV;
-        if(document.getElementById('playerExp')) document.getElementById('playerExp').innerText = `${playerEXP % 100}/100`;
 
         // 🥇 優先度に基づき賞味期限警告をハイパーソート（緊急を上へ）
         detectedStockItems.sort((a, b) => b.priority - a.priority);
@@ -811,14 +859,37 @@
         }
     }
 
+    // 🛡️ セル先頭が =,+,-,@ だと、開いた時にExcelが「数式」として解釈してしまうことがあるため無害化する
+    function sanitizeForExcel(val) {
+        if (typeof val !== 'string') return val;
+        return /^[=+\-@]/.test(val) ? "'" + val : val;
+    }
+
     function exportToExcel() {
-        if (dataList.length === 0) { alert("データがないよ！"); return; }
+        // 📅 メイン画面で選択中の月のデータだけを対象にする
+        const selectedMonth = document.getElementById('targetMonthSelect').value;
+        const monthData = dataList.filter(item => item.date.startsWith(selectedMonth));
+
+        if (monthData.length === 0) { alert("選択中の月にはデータがないよ！"); return; }
+
         const wb = XLSX.utils.book_new();
-        const totalTaxIn = dataList.reduce((sum, item) => sum + item.amountInTax, 0);
-        const sheet1Data = dataList.map(item => ({ "日時": item.date, "店名": item.shop, "商品名": item.product, "金額(税込)": item.amountInTax, "カテゴリ": item.category, "必要度": item.importance, "メモ": item.memo || "" }));
+        const totalTaxIn = monthData.reduce((sum, item) => sum + item.amountInTax, 0);
+        const sheet1Data = monthData.map(item => ({ "日時": item.date, "店名": sanitizeForExcel(item.shop), "商品名": sanitizeForExcel(item.product), "金額(税込)": item.amountInTax, "カテゴリ": item.category, "必要度": item.importance, "メモ": sanitizeForExcel(item.memo || "") }));
         sheet1Data.push({ "日時": "【合計】", "店名": "", "商品名": "", "金額(税込)": totalTaxIn, "カテゴリ": "", "必要度": "", "メモ": "" });
-        const ws1 = XLSX.utils.json_to_sheet(sheet1Data); XLSX.utils.book_append_sheet(wb, ws1, "データ出力");
-        XLSX.writeFile(wb, "parsimonia_hybrid_data.xlsx");
+
+        const ws1 = XLSX.utils.json_to_sheet(sheet1Data);
+        // 📐 列幅をピクセル単位で指定（A〜G）
+        ws1['!cols'] = [
+            { wpx: 11 }, // A 日時
+            { wpx: 27 }, // B 店名
+            { wpx: 55 }, // C 商品名
+            { wpx: 9 },  // D 金額(税込)
+            { wpx: 8 },  // E カテゴリ
+            { wpx: 9 },  // F 必要度
+            { wpx: 30 }  // G メモ
+        ];
+        XLSX.utils.book_append_sheet(wb, ws1, "データ出力");
+        XLSX.writeFile(wb, `parsimonia_${selectedMonth}.xlsx`);
     }
 
     document.getElementById('receiptForm').addEventListener('submit', function(e) {
