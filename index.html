@@ -3,19 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- 🛡️ 万一XSSでスクリプトが混入しても、想定外のドメインへの通信・スクリプト実行をブラウザレベルでブロックする -->
+    <!-- 🛡️ クリックジャッキング対策：この文書が他サイトのiframeに埋め込まれていたら即座に抜け出す -->
+    <!-- (frame-ancestorsはCSPのmetaタグでは効かないため、ここでJSによるフレームバスティングを行う) -->
+    <script>if (window.top !== window.self) { window.top.location = window.self.location.href; }</script>
+    <!-- 🛡️ 万一XSSでスクリプトが混入しても、想定外のドメインへの通信・読み込みをブラウザレベルでブロックする -->
+    <!-- 注意: このアプリのコードは全体がインラインscript/onclick属性で書かれているため、script-srcには
+         'unsafe-inline' が必須（外すとアプリ自体が一切動かなくなる）。そのためscript-src単体では
+         XSS対策にならず、実質的なXSS防御は引き続きescapeHtml()が担っている。
+         CSPはここでは「万一実行されても外部への通信・読み込み先を制限する」ための保険として機能する -->
     <!-- 追加後、ログイン/AIスキャン/クラウド保存が動くか必ず確認し、コンソールにCSP違反が出たら該当ドメインを追記すること -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://fonts.gstatic.com https://*.googleusercontent.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://generativelanguage.googleapis.com https://firebaseinstallations.googleapis.com; frame-src https://accounts.google.com https://parsimonia-kakeiboapp.firebaseapp.com; object-src 'none'; base-uri 'self';">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://fonts.gstatic.com https://*.googleusercontent.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://generativelanguage.googleapis.com https://firebaseinstallations.googleapis.com; frame-src https://accounts.google.com https://parsimonia-kakeiboapp.firebaseapp.com; object-src 'none'; base-uri 'self';">
     <title>parsimonia 〜家計簿アプリ〜</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- 🛡️ サプライチェーン対策：バージョンを固定し、SRI(integrity)でファイル改ざん・すり替えを検知する -->
+    <!-- バージョンを上げる際は、新しいファイルのSHA-384ハッシュを再計算してintegrity値も必ず更新すること -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" integrity="sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" integrity="sha384-xD1t9dGSVKobUztxDkv6xUI0H4AnFz0NxwlgDJJ7FDlblG9xxr1Z9iauCZuJYj6p" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" integrity="sha384-XMIl1b2Ez9tKAM0R5q67/iLdfnlLBl9kfo40X5WMtCPb+3OLplrjnOxZTYCg1SKY" crossorigin="anonymous"></script>
 
     <style>
         :root {
@@ -650,7 +659,7 @@
             <td><input type="date" id="edit-date-${id}" value="${escapeHtml(item.date)}" style="padding:4px;"></td>
             <td><input type="text" id="edit-shop-${id}" value="${escapeHtml(item.shop)}" maxlength="200" style="padding:4px;"></td>
             <td><input type="text" id="edit-product-${id}" value="${escapeHtml(item.product)}" maxlength="500" style="padding:4px;"></td>
-            <td><input type="number" id="edit-amt-${id}" value="${item.amountInTax}" min="0" max="100000000" style="padding:4px; width:80px;"></td>
+            <td><input type="number" id="edit-amt-${id}" value="${Number(item.amountInTax) || 0}" min="0" max="100000000" style="padding:4px; width:80px;"></td>
             <td>
                 <select id="edit-cat-${id}" style="padding:4px;">
                     ${categories.map(c => `<option value="${c}" ${item.category===c?'selected':''}>${c}</option>`).join('')}
@@ -713,7 +722,7 @@
             // ③ マスターデータベーステーブル構築（個別ID行を持たせる）
             if(tbody) {
                 tbody.insertAdjacentHTML('beforeend', `<tr id="row-${item.id}">
-                    <td>${escapeHtml(item.date)}</td><td>${escapeHtml(item.shop)}</td><td>${escapeHtml(item.product)}</td><td><strong>¥${item.amountInTax}</strong></td>
+                    <td>${escapeHtml(item.date)}</td><td>${escapeHtml(item.shop)}</td><td>${escapeHtml(item.product)}</td><td><strong>¥${Number(item.amountInTax) || 0}</strong></td>
                     <td>${escapeHtml(item.category)}</td><td><span class="badge ${item.importance==='必要'?'badge-needed':item.importance==='やや必要'?'badge-maybe':'badge-no'}">${escapeHtml(item.importance)}</span></td>
                     <td>${escapeHtml(item.memo||'')}</td>
                     <td>
@@ -729,14 +738,14 @@
 
                 // 1ページ目：通常支出内訳
                 if(totalListDiv) {
-                    totalListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item"><span>${escapeHtml(item.date)} [${escapeHtml(item.shop)}] - ${escapeHtml(item.product)}</span><strong>¥${item.amountInTax}</strong></div>`);
+                    totalListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item"><span>${escapeHtml(item.date)} [${escapeHtml(item.shop)}] - ${escapeHtml(item.product)}</span><strong>¥${Number(item.amountInTax) || 0}</strong></div>`);
                 }
 
                 // 1ページ目：節約候補（不要かも）タップ内訳の蓄積
                 if(item.importance === "不要かも") {
                     global_waste += item.amountInTax;
                     if(wasteListDiv) {
-                        wasteListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item" style="color:var(--neon-yellow);"><span>⚠️ ${escapeHtml(item.date)} [${escapeHtml(item.shop)}] ${escapeHtml(item.product)}</span><strong>¥${item.amountInTax}</strong></div>`);
+                        wasteListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item" style="color:var(--neon-yellow);"><span>⚠️ ${escapeHtml(item.date)} [${escapeHtml(item.shop)}] ${escapeHtml(item.product)}</span><strong>¥${Number(item.amountInTax) || 0}</strong></div>`);
                     }
                 }
 
