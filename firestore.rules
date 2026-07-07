@@ -1,0 +1,44 @@
+rules_version = '2';
+
+// parsimonia (家計簿アプリ) — Firestore security rules
+//
+// このファイルをFirebaseに反映しないとルールは有効になりません:
+//   firebase deploy --only firestore:rules
+// もしくは Firebase コンソール > Firestore Database > ルール タブに
+// このファイルの中身を貼り付けて「公開」してください。
+//
+// 方針:
+//  - 自分のデータ(users/{自分のuid}以下)だけ読み書きできる。他人のuidには一切アクセスできない。
+//  - 未ログイン(request.auth == null)のアクセスは常に拒否する。
+//  - receipts の書き込みは、想定するフィールド/型/サイズの範囲内であることを検証する
+//    (壊れたデータや異常に大きいデータが書き込まれるのを防ぐ)。
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /users/{userId} {
+      // 予算・ご褒美設定などを持つユーザードキュメント本体
+      allow read, write: if isOwner(userId);
+
+      match /receipts/{receiptId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && isValidReceipt(request.resource.data);
+      }
+    }
+
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function isValidReceipt(data) {
+      return data.keys().hasAll(['date', 'shop', 'product', 'amountInTax', 'category', 'importance'])
+        && data.date is string && data.date.size() <= 20
+        && data.shop is string && data.shop.size() <= 200
+        && data.product is string && data.product.size() <= 500
+        && data.amountInTax is number && data.amountInTax >= 0 && data.amountInTax <= 100000000
+        && data.category is string && data.category.size() <= 50
+        && data.importance is string && data.importance.size() <= 50
+        && (!('memo' in data) || (data.memo is string && data.memo.size() <= 1000));
+    }
+  }
+}
