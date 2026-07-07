@@ -3,16 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 🛡️ クリックジャッキング対策：この文書が他サイトのiframeに埋め込まれていたら即座に抜け出す -->
+    <!-- (frame-ancestorsはCSPのmetaタグでは効かないため、ここでJSによるフレームバスティングを行う) -->
+    <script>if (window.top !== window.self) { window.top.location = window.self.location.href; }</script>
+    <!-- 🛡️ 万一XSSでスクリプトが混入しても、想定外のドメインへの通信・読み込みをブラウザレベルでブロックする -->
+    <!-- 注意: このアプリのコードは全体がインラインscript/onclick属性で書かれているため、script-srcには
+         'unsafe-inline' が必須（外すとアプリ自体が一切動かなくなる）。そのためscript-src単体では
+         XSS対策にならず、実質的なXSS防御は引き続きescapeHtml()が担っている。
+         CSPはここでは「万一実行されても外部への通信・読み込み先を制限する」ための保険として機能する -->
+    <!-- 追加後、ログイン/AIスキャン/クラウド保存が動くか必ず確認し、コンソールにCSP違反が出たら該当ドメインを追記すること -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://fonts.gstatic.com https://*.googleusercontent.com; connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://generativelanguage.googleapis.com https://firebaseinstallations.googleapis.com; frame-src https://accounts.google.com https://parsimonia-kakeiboapp.firebaseapp.com; object-src 'none'; base-uri 'self';">
     <title>parsimonia 〜家計簿アプリ〜</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Mochiy+Pop+One&family=Zen+Maru+Gothic:wght@700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- 🛡️ サプライチェーン対策：バージョンを固定し、SRI(integrity)でファイル改ざん・すり替えを検知する -->
+    <!-- バージョンを上げる際は、新しいファイルのSHA-384ハッシュを再計算してintegrity値も必ず更新すること -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1" integrity="sha384-jb8JQMbMoBUzgWatfe6COACi2ljcDdZQ2OxczGA3bGNeWe+6DChMTBJemed7ZnvJ" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
 
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js" integrity="sha384-ajMUFBUFMCyjh8uxJg6bkGcKe9RTolyjwbxB3yES0QQMenP3Oztj/W9vA2SJPcIh" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js" integrity="sha384-xD1t9dGSVKobUztxDkv6xUI0H4AnFz0NxwlgDJJ7FDlblG9xxr1Z9iauCZuJYj6p" crossorigin="anonymous"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js" integrity="sha384-XMIl1b2Ez9tKAM0R5q67/iLdfnlLBl9kfo40X5WMtCPb+3OLplrjnOxZTYCg1SKY" crossorigin="anonymous"></script>
 
     <style>
         :root {
@@ -242,14 +254,14 @@
                         <div><label>日時</label><input type="date" id="date" required value="2026-06-13"></div>
                         <div>
                             <label>お店</label>
-                            <input type="text" id="shop" list="shopHistoryDatalist" required placeholder="履歴から自動補完されます">
+                            <input type="text" id="shop" list="shopHistoryDatalist" required maxlength="200" placeholder="履歴から自動補完されます">
                             <datalist id="shopHistoryDatalist"></datalist>
                         </div>
                     </div>
-                    <div class="form-group"><label>買ったもの</label><input type="text" id="product" required placeholder="例: 牛乳 シャンプー"></div>
+                    <div class="form-group"><label>買ったもの</label><input type="text" id="product" required maxlength="500" placeholder="例: 牛乳 シャンプー"></div>
                     <div class="form-row">
-                        <div><label>金額(税抜)</label><input type="number" id="amountExTax" oninput="calcTax()"></div>
-                        <div><label>金額(税込)</label><input type="number" id="amountInTax" required oninput="calcChange()"></div>
+                        <div><label>金額(税抜)</label><input type="number" id="amountExTax" min="0" max="100000000" oninput="calcTax()"></div>
+                        <div><label>金額(税込)</label><input type="number" id="amountInTax" required min="0" max="100000000" oninput="calcChange()"></div>
                     </div>
                     <div class="form-row">
                         <div><label>お預かり</label><input type="number" id="deposit" oninput="calcChange()"></div>
@@ -259,7 +271,7 @@
                         <div><label>カテゴリ</label><select id="category"></select></div>
                         <div><label>必要度</label><select id="importance"></select></div>
                     </div>
-                    <div class="form-group"><label>ひと言メモ</label><input type="text" id="memo"></div>
+                    <div class="form-group"><label>ひと言メモ</label><input type="text" id="memo" maxlength="1000"></div>
                     <button type="submit" class="btn-action btn-green">レシートデータをワールドに登録！</button>
                 </form>
             </div>
@@ -361,7 +373,7 @@
                 document.getElementById('mainApp').style.display = 'block';
                 document.getElementById('authStatusText').innerText = "ようこそparsimoniaへ！";
                 document.getElementById('authStatusText').style.color = "var(--neon-green)";
-                document.getElementById('userZone').innerHTML = `<div class="user-info"><img class="user-pic" src="${user.photoURL}"> <button class="btn-action btn-pink" style="padding:5px 10px; font-size:0.8em;" onclick="logout()">ログアウト</button></div>`;
+                document.getElementById('userZone').innerHTML = `<div class="user-info"><img class="user-pic" src="${escapeHtml(user.photoURL || '')}"> <button class="btn-action btn-pink" style="padding:5px 10px; font-size:0.8em;" onclick="logout()">ログアウト</button></div>`;
                 loadCloudData();
                 loadSettings();
             } else {
@@ -645,9 +657,9 @@
 
         row.innerHTML = `
             <td><input type="date" id="edit-date-${id}" value="${escapeHtml(item.date)}" style="padding:4px;"></td>
-            <td><input type="text" id="edit-shop-${id}" value="${escapeHtml(item.shop)}" style="padding:4px;"></td>
-            <td><input type="text" id="edit-product-${id}" value="${escapeHtml(item.product)}" style="padding:4px;"></td>
-            <td><input type="number" id="edit-amt-${id}" value="${item.amountInTax}" style="padding:4px; width:80px;"></td>
+            <td><input type="text" id="edit-shop-${id}" value="${escapeHtml(item.shop)}" maxlength="200" style="padding:4px;"></td>
+            <td><input type="text" id="edit-product-${id}" value="${escapeHtml(item.product)}" maxlength="500" style="padding:4px;"></td>
+            <td><input type="number" id="edit-amt-${id}" value="${Number(item.amountInTax) || 0}" min="0" max="100000000" style="padding:4px; width:80px;"></td>
             <td>
                 <select id="edit-cat-${id}" style="padding:4px;">
                     ${categories.map(c => `<option value="${c}" ${item.category===c?'selected':''}>${c}</option>`).join('')}
@@ -658,7 +670,7 @@
                     ${importanceLevels.map(i => `<option value="${i}" ${item.importance===i?'selected':''}>${i}</option>`).join('')}
                 </select>
             </td>
-            <td><input type="text" id="edit-memo-${id}" value="${escapeHtml(item.memo||'')}" style="padding:4px;"></td>
+            <td><input type="text" id="edit-memo-${id}" value="${escapeHtml(item.memo||'')}" maxlength="1000" style="padding:4px;"></td>
             <td>
                 <button class="btn-edit" onclick="saveEditField('${id}')">保存</button>
                 <button class="btn-delete" onclick="updateApp()">取消</button>
@@ -676,6 +688,7 @@
             importance: document.getElementById(`edit-imp-${id}`).value,
             memo: document.getElementById(`edit-memo-${id}`).value
         };
+        if (!isSaneAmount(updated.amountInTax)) { alert("金額(税込)は0〜100,000,000の範囲で入力してください。"); return; }
         updateItem(id, updated);
     }
 
@@ -709,7 +722,7 @@
             // ③ マスターデータベーステーブル構築（個別ID行を持たせる）
             if(tbody) {
                 tbody.insertAdjacentHTML('beforeend', `<tr id="row-${item.id}">
-                    <td>${escapeHtml(item.date)}</td><td>${escapeHtml(item.shop)}</td><td>${escapeHtml(item.product)}</td><td><strong>¥${item.amountInTax}</strong></td>
+                    <td>${escapeHtml(item.date)}</td><td>${escapeHtml(item.shop)}</td><td>${escapeHtml(item.product)}</td><td><strong>¥${Number(item.amountInTax) || 0}</strong></td>
                     <td>${escapeHtml(item.category)}</td><td><span class="badge ${item.importance==='必要'?'badge-needed':item.importance==='やや必要'?'badge-maybe':'badge-no'}">${escapeHtml(item.importance)}</span></td>
                     <td>${escapeHtml(item.memo||'')}</td>
                     <td>
@@ -725,14 +738,14 @@
 
                 // 1ページ目：通常支出内訳
                 if(totalListDiv) {
-                    totalListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item"><span>${escapeHtml(item.date)} [${escapeHtml(item.shop)}] - ${escapeHtml(item.product)}</span><strong>¥${item.amountInTax}</strong></div>`);
+                    totalListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item"><span>${escapeHtml(item.date)} [${escapeHtml(item.shop)}] - ${escapeHtml(item.product)}</span><strong>¥${Number(item.amountInTax) || 0}</strong></div>`);
                 }
 
                 // 1ページ目：節約候補（不要かも）タップ内訳の蓄積
                 if(item.importance === "不要かも") {
                     global_waste += item.amountInTax;
                     if(wasteListDiv) {
-                        wasteListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item" style="color:var(--neon-yellow);"><span>⚠️ ${escapeHtml(item.date)} [${escapeHtml(item.shop)}] ${escapeHtml(item.product)}</span><strong>¥${item.amountInTax}</strong></div>`);
+                        wasteListDiv.insertAdjacentHTML('beforeend', `<div class="detail-item" style="color:var(--neon-yellow);"><span>⚠️ ${escapeHtml(item.date)} [${escapeHtml(item.shop)}] ${escapeHtml(item.product)}</span><strong>¥${Number(item.amountInTax) || 0}</strong></div>`);
                     }
                 }
 
@@ -892,6 +905,9 @@
         XLSX.writeFile(wb, `parsimonia_${selectedMonth}.xlsx`);
     }
 
+    // 🛡️ Firestoreルール側のisValidReceipt()と揃えた範囲チェック（不正値をクラウド送信前に弾く）
+    function isSaneAmount(n) { return Number.isFinite(n) && n >= 0 && n <= 100000000; }
+
     document.getElementById('receiptForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const newItem = {
@@ -900,6 +916,7 @@
             deposit: parseInt(document.getElementById('deposit').value) || 0, change: parseInt(document.getElementById('change').value) || 0,
             category: document.getElementById('category').value, importance: document.getElementById('importance').value, memo: document.getElementById('memo').value
         };
+        if (!isSaneAmount(newItem.amountInTax)) { alert("金額(税込)は0〜100,000,000の範囲で入力してください。"); return; }
         saveReceipt(newItem);
         document.getElementById('shop').value = ''; document.getElementById('product').value = ''; document.getElementById('amountExTax').value = ''; document.getElementById('amountInTax').value = ''; document.getElementById('deposit').value = ''; document.getElementById('change').value = ''; document.getElementById('memo').value = '';
     });
